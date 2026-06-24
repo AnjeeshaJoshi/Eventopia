@@ -8,19 +8,19 @@ import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import 'package:provider/provider.dart';
 
-import '../auth/app_provider.dart';
-import '../models.dart';
-import '../theme.dart';
-import '../widgets.dart';
+import '../../auth/app_provider.dart';
+import '../../models.dart';
+import '../../theme.dart';
+import '../../widgets.dart';
 
-class OrgAnalytics extends StatefulWidget {
-  const OrgAnalytics({super.key});
+class AdminReports extends StatefulWidget {
+  const AdminReports({super.key});
 
   @override
-  State<OrgAnalytics> createState() => _OrgAnalyticsState();
+  State<AdminReports> createState() => _AdminReportsState();
 }
 
-class _OrgAnalyticsState extends State<OrgAnalytics> {
+class _AdminReportsState extends State<AdminReports> {
   String? _selectedEventId;
 
   Future<void> _downloadReportPdf(AppEvent event, Map<TicketCategory, int> byCategory, double totalRevenue) async {
@@ -86,21 +86,24 @@ class _OrgAnalyticsState extends State<OrgAnalytics> {
   @override
   Widget build(BuildContext context) {
     final p = context.watch<AppProvider>();
-    final myEvents = p.myEvents;
+    final allEvents = p.events;
 
-    if (myEvents.isEmpty) {
+    if (allEvents.isEmpty) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Analytics')),
+        appBar: AppBar(title: const Text('Reports & Analytics')),
         body: const Center(
           child: Text(
-            'Create events to see analytics.',
+            'No events available to show analytics.',
             style: TextStyle(color: C.t2),
           ),
         ),
       );
     }
 
-    _selectedEventId ??= myEvents.first.id;
+    // Default to the first event if none selected
+    if (_selectedEventId == null || !allEvents.any((e) => e.id == _selectedEventId)) {
+      _selectedEventId = allEvents.first.id;
+    }
 
     final data = p.analytics(_selectedEventId!);
     final event = data['event'] as AppEvent;
@@ -115,7 +118,7 @@ class _OrgAnalyticsState extends State<OrgAnalytics> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Analytics'),
+        title: const Text('Reports & Analytics'),
         actions: [
           IconButton(
             icon: const Icon(Icons.download_rounded),
@@ -124,20 +127,12 @@ class _OrgAnalyticsState extends State<OrgAnalytics> {
           ),
         ],
       ),
-
       body: SafeArea(
         child: ListView(
           keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-
-          padding: const EdgeInsets.fromLTRB(
-            16,
-            16,
-            16,
-            100,
-          ),
-
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
           children: [
-            //event selector
+            // Event selector
             DropdownButtonFormField<String>(
               value: _selectedEventId,
               dropdownColor: C.card,
@@ -148,7 +143,7 @@ class _OrgAnalyticsState extends State<OrgAnalytics> {
                   borderSide: const BorderSide(color: C.border),
                 ),
               ),
-              items: myEvents.map((e) {
+              items: allEvents.map((e) {
                 return DropdownMenuItem(
                   value: e.id,
                   child: Text(e.title, overflow: TextOverflow.ellipsis),
@@ -162,7 +157,7 @@ class _OrgAnalyticsState extends State<OrgAnalytics> {
 
             const SizedBox(height: 16),
 
-            // kpi grid
+            // KPI Grid
             GridView.count(
               crossAxisCount: 2,
               shrinkWrap: true,
@@ -210,17 +205,14 @@ class _OrgAnalyticsState extends State<OrgAnalytics> {
                     style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
                   ),
                   const SizedBox(height: 20),
-
                   SizedBox(
                     height: 160,
                     child: BarChart(
                       BarChartData(
                         alignment: BarChartAlignment.spaceAround,
-
                         maxY: (daily.isEmpty)
                             ? 10
                             : (maxRevenue <= 0 ? 10 : maxRevenue * 1.3),
-
                         barGroups: daily.asMap().entries.map((e) {
                           return BarChartGroupData(
                             x: e.key,
@@ -234,7 +226,6 @@ class _OrgAnalyticsState extends State<OrgAnalytics> {
                             ],
                           );
                         }).toList(),
-
                         titlesData: FlTitlesData(
                           leftTitles: AxisTitles(
                             sideTitles: SideTitles(
@@ -246,7 +237,6 @@ class _OrgAnalyticsState extends State<OrgAnalytics> {
                               ),
                             ),
                           ),
-
                           bottomTitles: AxisTitles(
                             sideTitles: SideTitles(
                               showTitles: true,
@@ -262,7 +252,6 @@ class _OrgAnalyticsState extends State<OrgAnalytics> {
                               },
                             ),
                           ),
-
                           rightTitles: const AxisTitles(
                             sideTitles: SideTitles(showTitles: false),
                           ),
@@ -270,13 +259,11 @@ class _OrgAnalyticsState extends State<OrgAnalytics> {
                             sideTitles: SideTitles(showTitles: false),
                           ),
                         ),
-
                         gridData: FlGridData(
                           drawVerticalLine: false,
                           getDrawingHorizontalLine: (_) =>
-                          const FlLine(color: C.border, strokeWidth: 1),
+                              const FlLine(color: C.border, strokeWidth: 1),
                         ),
-
                         borderData: FlBorderData(show: false),
                       ),
                     ),
@@ -287,7 +274,7 @@ class _OrgAnalyticsState extends State<OrgAnalytics> {
 
             const SizedBox(height: 16),
 
-           //category
+            // Category Sales
             GCard(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -297,10 +284,8 @@ class _OrgAnalyticsState extends State<OrgAnalytics> {
                     style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
                   ),
                   const SizedBox(height: 16),
-
                   ...TicketCategory.values.map((cat) {
                     final sold = byCategory[cat] ?? 0;
-
                     final ticketType = event.ticketTypes
                         .where((t) => t.category == cat)
                         .firstOrNull;
@@ -329,8 +314,7 @@ class _OrgAnalyticsState extends State<OrgAnalytics> {
                               child: LinearProgressIndicator(
                                 value: pct,
                                 backgroundColor: C.surface,
-                                valueColor:
-                                AlwaysStoppedAnimation(cat.color),
+                                valueColor: AlwaysStoppedAnimation(cat.color),
                                 minHeight: 8,
                               ),
                             ),

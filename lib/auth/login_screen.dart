@@ -1,7 +1,7 @@
 import 'package:ems_app/models.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import '../admin/tabs/screens/changepassword_screen.dart';
+import '../admin/tabs/changepassword_screen.dart';
 import '../theme.dart';
 import '../widgets.dart';
 import 'register_screen.dart';
@@ -56,7 +56,33 @@ class _LoginScreenState extends State<LoginScreen> {
     if (err != null) {
       setState(() => _error = err);
     } else {
-      _navigate(prov.current!.role);
+      final user = prov.current!;
+      if (user.role == UserRole.organizer && user.mustChangePassword) {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (ctx) => AlertDialog(
+            title: const Text('Password Update Required'),
+            content: const Text(
+                'As a first-time organizer, you must change your default password to continue.'),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(ctx); // Close dialog
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) => const ChangePasswordScreen()),
+                  );
+                },
+                child: const Text('Change Password'),
+              ),
+            ],
+          ),
+        );
+      } else {
+        _navigate(user.role);
+      }
     }
   }
 
@@ -187,9 +213,9 @@ class _LoginScreenState extends State<LoginScreen> {
                                     ),
                                   ),
                                   if (_error != null) ErrorBanner(_error!),
+
                                   const SizedBox(height: 18),
-                                  SizedBox(
-                                    width: double.infinity,
+                                  Padding(padding: const EdgeInsets.symmetric(horizontal: 50),
                                     child: GBtn(
                                       label: 'Log In',
                                       onTap: _login,
@@ -237,7 +263,6 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 24),
                     ],
                   ),
                 ),

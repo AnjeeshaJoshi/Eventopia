@@ -39,18 +39,15 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
-
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),
-
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
         child: Column(
           children: [
             const SizedBox(height: 10),
-
             Container(
               width: 100,
               height: 100,
@@ -64,9 +61,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                 color: Color(0xFF7C3AED),
               ),
             ),
-
             const SizedBox(height: 20),
-
             const Text(
               'Change Password',
               style: TextStyle(
@@ -75,9 +70,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                 color: Color(0xFF1F2937),
               ),
             ),
-
             const SizedBox(height: 8),
-
             const Text(
               'Enter a new password below to secure your account.',
               textAlign: TextAlign.center,
@@ -85,9 +78,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                 color: Colors.grey,
               ),
             ),
-
             const SizedBox(height: 30),
-
             Card(
               elevation: 2,
               shape: RoundedRectangleBorder(
@@ -107,8 +98,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
-                          prefixIcon:
-                          const Icon(Icons.lock_outline_rounded),
+                          prefixIcon: const Icon(Icons.lock_outline_rounded),
                           suffixIcon: IconButton(
                             icon: Icon(
                               _hidePassword
@@ -132,9 +122,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                           return null;
                         },
                       ),
-
                       const SizedBox(height: 20),
-
                       TextFormField(
                         controller: _confirmPassword,
                         obscureText: _hideConfirmPassword,
@@ -143,8 +131,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
-                          prefixIcon:
-                          const Icon(Icons.lock_outline_rounded),
+                          prefixIcon: const Icon(Icons.lock_outline_rounded),
                           suffixIcon: IconButton(
                             icon: Icon(
                               _hideConfirmPassword
@@ -153,8 +140,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                             ),
                             onPressed: () {
                               setState(() {
-                                _hideConfirmPassword =
-                                !_hideConfirmPassword;
+                                _hideConfirmPassword = !_hideConfirmPassword;
                               });
                             },
                           ),
@@ -166,27 +152,25 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                           return null;
                         },
                       ),
-
                       const SizedBox(height: 25),
-
-                      SizedBox(
-                        width: double.infinity,
-                        height: 50,
-                        child: ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor:
-                            const Color(0xFF7C3AED),
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(
-                              borderRadius:
-                              BorderRadius.circular(12),
+                      Center(
+                        child: SizedBox(
+                          width: 200,
+                          height: 50,
+                          child: ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF7C3AED),
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
                             ),
-                          ),
-                          onPressed: _resetPassword,
-                          child: const Text(
-                            'Reset Password',
-                            style: TextStyle(
-                              fontWeight: FontWeight.w600,
+                            onPressed: _resetPassword,
+                            child: const Text(
+                              'Reset Password',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
                           ),
                         ),

@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'models.dart';
@@ -52,19 +54,31 @@ class GBtn extends StatelessWidget {
             child: CircularProgressIndicator(
                 strokeWidth: 2, color: Colors.white),
           )
-              : Row(
+              :Row(
             mainAxisAlignment: MainAxisAlignment.center,
             mainAxisSize: MainAxisSize.min,
             children: [
               if (icon != null) ...[
-                Icon(icon, size: 18, color: Colors.white),
-                const SizedBox(width: 8),
+                Icon(
+                  icon,
+                  size: 18,
+                  color: Colors.white,
+                ),
+                const SizedBox(width: 6),
               ],
-              Text(label,
+
+              Flexible(
+                child: Text(
+                  label,
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
                   style: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white)),
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
             ],
           ),
         ),
@@ -240,26 +254,39 @@ class EventCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Banner
+          // Banner – show poster image if available
           Container(
             height: compact ? 72 : 96,
             decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  C.violet.withOpacity(.7),
-                  C.indigo.withOpacity(.5),
-                ],
-              ),
               borderRadius:
               const BorderRadius.vertical(top: Radius.circular(20)),
             ),
+            clipBehavior: Clip.antiAlias,
             child: Stack(
+              fit: StackFit.expand,
               children: [
-                Center(
-                  child: Icon(_icon,
-                      size: compact ? 32 : 44,
-                      color: Colors.white.withOpacity(.25)),
-                ),
+                if (event.posterPath != null)
+                  Image.file(
+                    File(event.posterPath!),
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => _gradientBanner(compact),
+                  )
+                else
+                  _gradientBanner(compact),
+                // Slight dark overlay for chip readability on images
+                if (event.posterPath != null)
+                  Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.bottomCenter,
+                        end: Alignment.topCenter,
+                        colors: [
+                          Colors.black.withOpacity(0.15),
+                          Colors.transparent,
+                        ],
+                      ),
+                    ),
+                  ),
                 Positioned(
                   top: 10,
                   right: 10,
@@ -347,6 +374,22 @@ class EventCard extends StatelessWidget {
       ),
     );
   }
+
+  Widget _gradientBanner(bool compact) => Container(
+    decoration: BoxDecoration(
+      gradient: LinearGradient(
+        colors: [
+          C.violet.withOpacity(.7),
+          C.indigo.withOpacity(.5),
+        ],
+      ),
+    ),
+    child: Center(
+      child: Icon(_icon,
+          size: compact ? 32 : 44,
+          color: Colors.white.withOpacity(.25)),
+    ),
+  );
 
   Widget _chip(String t, Color c) => Container(
     padding:
@@ -468,11 +511,12 @@ class TicketChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Container(
     padding:
-    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+    const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
     decoration: BoxDecoration(
       color: cat.color.withOpacity(.15),
       borderRadius: BorderRadius.circular(8),
       border: Border.all(color: cat.color.withOpacity(.4)),
+
     ),
     child: Text(cat.label,
         style: TextStyle(
@@ -680,8 +724,16 @@ class SuccessView extends StatelessWidget {
                 style:
                 const TextStyle(fontSize: 14, color: C.t2),
                 textAlign: TextAlign.center),
+
             const SizedBox(height: 32),
-            GBtn(label: btnLabel, onTap: onTap),
+            Center(
+              child: SizedBox(
+                width: 180,
+                child: GBtn(
+                    label: btnLabel,
+                    onTap: onTap),
+              ),
+            )
           ],
         ),
       ),

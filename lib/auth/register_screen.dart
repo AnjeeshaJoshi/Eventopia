@@ -288,8 +288,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             if (_error != null) ErrorBanner(_error!),
 
                             const SizedBox(height: 22),
-
-                            SizedBox(
+                            Padding(padding: const EdgeInsets.symmetric(horizontal: 40),
+                            child: SizedBox(
                               width: double.infinity,
                               child: GBtn(
                                 label: 'Create Account',
@@ -298,6 +298,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 gradient: C.gPrimary,
                                 icon: Icons.how_to_reg_rounded,
                               ),
+                            ),
                             ),
                           ],
                         ),

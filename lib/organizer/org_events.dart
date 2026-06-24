@@ -17,14 +17,6 @@ class OrgEvents extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('My Events'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.person_outline),
-            onPressed: () {
-              Navigator.pushNamed(context, '/org-profile');
-            },
-          ),
-        ],
       ),
 
       floatingActionButton: FloatingActionButton.extended(
@@ -34,7 +26,8 @@ class OrgEvents extends StatelessWidget {
           backgroundColor: Colors.transparent,
           builder: (_) => const CreateEventSheet(),
         ),
-        backgroundColor: C.violet,
+        backgroundColor: C.rose,
+        foregroundColor: Colors.white,
         icon: const Icon(Icons.add_rounded),
         label: const Text('Create'),
       ),

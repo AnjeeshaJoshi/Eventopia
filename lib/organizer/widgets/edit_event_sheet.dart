@@ -10,45 +10,60 @@ import '../../models.dart';
 import '../../theme.dart';
 import '../../widgets.dart';
 
-class CreateEventSheet extends StatefulWidget {
-  const CreateEventSheet();
+class EditEventSheet extends StatefulWidget {
+  final AppEvent event;
+
+  const EditEventSheet({super.key, required this.event});
 
   @override
-  State<CreateEventSheet> createState() => _CreateEventSheetState();
+  State<EditEventSheet> createState() => _EditEventSheetState();
 }
 
-class _CreateEventSheetState extends State<CreateEventSheet> {
+class _EditEventSheetState extends State<EditEventSheet> {
   final _form = GlobalKey<FormState>();
-  final _title = TextEditingController();
-  final _desc = TextEditingController();
-  final _location = TextEditingController();
-  
-  // Promo code simple fields
-  final _promoCode = TextEditingController();
-  final _promoDiscount = TextEditingController();
+  late final TextEditingController _title;
+  late final TextEditingController _desc;
+  late final TextEditingController _location;
 
-  DateTime _date = DateTime.now().add(const Duration(days: 7));
-  TimeOfDay _start = const TimeOfDay(hour: 9, minute: 0);
-  TimeOfDay _end = const TimeOfDay(hour: 18, minute: 0);
+  late final TextEditingController _promoCode;
+  late final TextEditingController _promoDiscount;
+  late DateTime _date;
+  late TimeOfDay _start;
+  late TimeOfDay _end;
 
   // Poster image
   String? _posterPath;
 
-  // Ticket prices
-  final _prices = {
-    TicketCategory.vip: TextEditingController(text: '350'),
-    TicketCategory.general: TextEditingController(text: '120'),
-    TicketCategory.senior: TextEditingController(text: '70'),
-    TicketCategory.child: TextEditingController(text: '40'),
-  };
-  final _caps = {
-    TicketCategory.vip: TextEditingController(text: '50'),
-    TicketCategory.general: TextEditingController(text: '300'),
-    TicketCategory.senior: TextEditingController(text: '80'),
-    TicketCategory.child: TextEditingController(text: '70'),
-  };
+  late final Map<TicketCategory, TextEditingController> _prices;
+  late final Map<TicketCategory, TextEditingController> _caps;
 
   bool _loading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _title = TextEditingController(text: widget.event.title);
+    _desc = TextEditingController(text: widget.event.description);
+    _location = TextEditingController(text: widget.event.location);
+    
+    final existingPromo = widget.event.promoCodes.isNotEmpty ? widget.event.promoCodes.first : null;
+    _promoCode = TextEditingController(text: existingPromo?.code ?? '');
+    _promoDiscount = TextEditingController(text: existingPromo != null ? existingPromo.discountPct.toStringAsFixed(0) : '');
+    
+    _date = widget.event.date;
+    _start = widget.event.start;
+    _end = widget.event.end;
+    _posterPath = widget.event.posterPath;
+
+    _prices = {};
+    _caps = {};
+    for (var cat in TicketCategory.values) {
+      final matches = widget.event.ticketTypes.where((t) => t.category == cat);
+      final oldType = matches.isEmpty ? null : matches.first;
+      _prices[cat] = TextEditingController(text: oldType?.price.toStringAsFixed(0) ?? cat.defaultPrice.toStringAsFixed(0));
+      _caps[cat] = TextEditingController(text: oldType?.capacity.toString() ?? '50');
+    }
+  }
 
   @override
   void dispose() {
@@ -57,8 +72,8 @@ class _CreateEventSheetState extends State<CreateEventSheet> {
     _location.dispose();
     _promoCode.dispose();
     _promoDiscount.dispose();
-    _prices.values.forEach((c) => c.dispose());
-    _caps.values.forEach((c) => c.dispose());
+    for (var c in _prices.values) { c.dispose(); }
+    for (var c in _caps.values) { c.dispose(); }
     super.dispose();
   }
 
@@ -75,17 +90,23 @@ class _CreateEventSheetState extends State<CreateEventSheet> {
     }
   }
 
-  Future<void> _create() async {
+  Future<void> _update() async {
     if (!_form.currentState!.validate()) return;
     setState(() => _loading = true);
     await Future.delayed(const Duration(milliseconds: 600));
 
     final types = TicketCategory.values.map((cat) {
+      final matches = widget.event.ticketTypes.where((t) => t.category == cat);
+      final oldType = matches.isEmpty ? null : matches.first;
+      final price = double.tryParse(_prices[cat]!.text) ?? cat.defaultPrice;
+      final cap = int.tryParse(_caps[cat]!.text) ?? 50;
+      
       return TicketType(
-        id: DateTime.now().millisecondsSinceEpoch.toString() + cat.name,
+        id: oldType?.id ?? (DateTime.now().millisecondsSinceEpoch.toString() + cat.name),
         category: cat,
-        price: double.tryParse(_prices[cat]!.text) ?? cat.defaultPrice,
-        capacity: int.tryParse(_caps[cat]!.text) ?? 50,
+        price: price,
+        capacity: cap,
+        sold: oldType?.sold ?? 0,
       );
     }).toList();
 
@@ -104,29 +125,19 @@ class _CreateEventSheetState extends State<CreateEventSheet> {
       }
     }
 
-    context.read<AppProvider>().createEvent(
-      title: _title.text.trim(),
-      description: _desc.text.trim(),
-      location: _location.text.trim(),
-      date: _date,
-      start: _start,
-      end: _end,
-      ticketTypes: types,
-      promoCodes: promoCodes,
-      posterPath: _posterPath,
-    );
+    context.read<AppProvider>().editEvent(
+          id: widget.event.id,
+          title: _title.text.trim(),
+          description: _desc.text.trim(),
+          location: _location.text.trim(),
+          date: _date,
+          start: _start,
+          end: _end,
+          ticketTypes: types,
+          posterPath: _posterPath,
+        );
 
-    if (mounted) {
-      Navigator.pop(context);
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Event has been added successfully!'),
-          duration: Duration(seconds: 2),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-    }
+    if (mounted) Navigator.pop(context);
   }
 
   @override
@@ -156,7 +167,7 @@ class _CreateEventSheetState extends State<CreateEventSheet> {
                       color: C.border, borderRadius: BorderRadius.circular(2)),
                 ),
               ),
-              const Text('Create New Event',
+              const Text('Edit Event',
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
               const SizedBox(height: 16),
 
@@ -188,7 +199,6 @@ class _CreateEventSheetState extends State<CreateEventSheet> {
                               File(_posterPath!),
                               fit: BoxFit.cover,
                             ),
-                            // Gradient overlay for readability
                             Container(
                               decoration: BoxDecoration(
                                 gradient: LinearGradient(
@@ -285,11 +295,12 @@ class _CreateEventSheetState extends State<CreateEventSheet> {
                         final d = await showDatePicker(
                           context: context,
                           initialDate: _date,
-                          firstDate: DateTime.now(),
+                          firstDate: DateTime.now().subtract(const Duration(days: 365)),
                           lastDate:
                               DateTime.now().add(const Duration(days: 365)),
                           selectableDayPredicate: (day) {
                             return !prov.events.any((e) =>
+                                e.id != widget.event.id && // exclude current event
                                 e.status == EventStatus.ongoing &&
                                 e.date.year == day.year &&
                                 e.date.month == day.month &&
@@ -438,6 +449,13 @@ class _CreateEventSheetState extends State<CreateEventSheet> {
                                       borderSide:
                                           const BorderSide(color: C.border)),
                                 ),
+                                validator: (v) {
+                                  final cap = int.tryParse(v ?? '') ?? 0;
+                                  final matches = widget.event.ticketTypes.where((t) => t.category == cat);
+                                  final oldSold = matches.isEmpty ? 0 : matches.first.sold;
+                                  if (cap < oldSold) return 'Min $oldSold';
+                                  return null;
+                                },
                               ),
                             ),
                           ],
@@ -473,14 +491,13 @@ class _CreateEventSheetState extends State<CreateEventSheet> {
               ),
 
               const SizedBox(height: 20),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 50),
-                child: GBtn(
-                  label: 'Create Event',
-                  onTap: _create,
-                  loading: _loading,
-                  icon: Icons.add_circle_rounded,
-                ),
+              Padding(padding: const EdgeInsets.symmetric(horizontal: 50),
+              child: GBtn(
+                label: 'Save Changes',
+                onTap: _update,
+                loading: _loading,
+                icon: Icons.save_rounded,
+              ),
               ),
             ],
           ),

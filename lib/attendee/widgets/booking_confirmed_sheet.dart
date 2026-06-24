@@ -1,4 +1,9 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
+import 'package:printing/printing.dart';
 import 'package:provider/provider.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
@@ -10,7 +15,68 @@ import '../../widgets.dart';
 class BookingConfirmedSheet extends StatelessWidget {
   final Booking booking;
 
-  const BookingConfirmedSheet({required this.booking});
+  const BookingConfirmedSheet({super.key, required this.booking});
+
+  Future<void> _downloadPdf(BuildContext context) async {
+    try {
+      final pdf = pw.Document();
+
+      pdf.addPage(
+        pw.Page(
+          build: (pw.Context context) {
+            return pw.Center(
+              child: pw.Column(
+                mainAxisAlignment: pw.MainAxisAlignment.center,
+                children: [
+                  pw.Text('Eventopia Ticket', style: pw.TextStyle(fontSize: 24, fontWeight: pw.FontWeight.bold)),
+                  pw.SizedBox(height: 20),
+                  pw.Text('Event: ${booking.eventTitle}', style: const pw.TextStyle(fontSize: 18)),
+                  pw.SizedBox(height: 10),
+                  pw.Text('Category: ${booking.category.label}'),
+                  pw.Text('Quantity: ${booking.quantity}'),
+                  pw.Text('Section: ${booking.category.section}'),
+                  pw.Text('Total Paid: NPR ${booking.total.toStringAsFixed(2)}'),
+                  pw.SizedBox(height: 20),
+                  pw.Text('Ref: ${booking.id.substring(0, 8).toUpperCase()}'),
+                  pw.SizedBox(height: 20),
+                  pw.BarcodeWidget(
+                    barcode: pw.Barcode.qrCode(),
+                    data: booking.qrData,
+                    width: 150,
+                    height: 150,
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
+      );
+
+      final dir = await getApplicationDocumentsDirectory();
+      final file = File('${dir.path}/ticket_${booking.id.substring(0, 8)}.pdf');
+      await file.writeAsBytes(await pdf.save());
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Ticket saved to ${file.path}'),
+            action: SnackBarAction(
+              label: 'Print/Share',
+              onPressed: () {
+                Printing.sharePdf(bytes: file.readAsBytesSync(), filename: 'ticket.pdf');
+              },
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to generate PDF')),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -117,11 +183,25 @@ class BookingConfirmedSheet extends StatelessWidget {
             ),
 
             const SizedBox(height: 20),
-
-            GBtn(
-              label: 'Done',
-              onTap: () => Navigator.pop(context),
-              gradient: C.gTeal,
+            Row(
+              children: [
+                Expanded(
+                  child: GBtn(
+                    label: 'Download PDF',
+                    onTap: () => _downloadPdf(context),
+                    icon: Icons.download_rounded,
+                    gradient: LinearGradient(colors: [C.sky, C.indigo]),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: GBtn(
+                    label: 'Done',
+                    onTap: () => Navigator.pop(context),
+                    gradient: C.gTeal,
+                  ),
+                ),
+              ],
             ),
           ],
         ),

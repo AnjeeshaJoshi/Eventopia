@@ -57,8 +57,15 @@ class AttendeeHome extends StatelessWidget {
                           size: 22,
                         ),
                         onPressed: () {
-                          p.logout();
-                          Navigator.pushReplacementNamed(context, '/login');
+                          Navigator.pushNamedAndRemoveUntil(
+                            context,
+                            '/login',
+                                (route) => false,
+                          );
+
+                          Future.microtask(() {
+                            p.logout();
+                          });
                         },
                       ),
                     ],

@@ -5,8 +5,10 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
+import '../../auth/app_provider.dart';
 import '../../theme.dart';
 import '../../widgets.dart';
+import 'edit_event_sheet.dart';
 
 class EventDetailSheet extends StatelessWidget {
   final AppEvent event;
@@ -40,9 +42,27 @@ class EventDetailSheet extends StatelessWidget {
                     color: C.border, borderRadius: BorderRadius.circular(2)),
               ),
             ),
-            Text(event.title,
-                style:
-                    const TextStyle(fontSize: 20, fontWeight: FontWeight.w700)),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(event.title,
+                      style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700)),
+                ),
+                if (context.read<AppProvider>().current?.id == event.organizerId)
+                  IconButton(
+                    icon: const Icon(Icons.edit_rounded, color: C.violet),
+                    onPressed: () {
+                      Navigator.pop(context); // Close detail sheet
+                      showModalBottomSheet(
+                        context: context,
+                        isScrollControlled: true,
+                        backgroundColor: Colors.transparent,
+                        builder: (_) => EditEventSheet(event: event),
+                      );
+                    },
+                  ),
+              ],
+            ),
             const SizedBox(height: 6),
             Text(event.description,
                 style: const TextStyle(fontSize: 13, color: C.t2)),
@@ -70,16 +90,35 @@ class EventDetailSheet extends StatelessWidget {
                   padding: const EdgeInsets.only(bottom: 8),
                   child: Row(
                     children: [
-                      TicketChip(cat: t.category),
-                      const Spacer(),
-                      Text('MYR ${t.price.toStringAsFixed(0)}',
+                      Flexible(
+                        child: TicketChip(cat: t.category),
+                      ),
+
+                      const SizedBox(width: 6),
+
+                      Flexible(
+                        child: Text(
+                          'NPR ${t.price.toStringAsFixed(0)}',
+                          overflow: TextOverflow.ellipsis,
+                          textAlign: TextAlign.right,
                           style: const TextStyle(
-                              fontSize: 13, fontWeight: FontWeight.w600)),
-                      const SizedBox(width: 8),
-                      Text('${t.sold}/${t.capacity}',
-                          style: const TextStyle(fontSize: 12, color: C.t2)),
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(width: 6),
+
+                      Text(
+                        '${t.sold}/${t.capacity}',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: C.t2,
+                        ),
+                      ),
                     ],
-                  ),
+                  )
                 )),
             if (event.promoCodes.isNotEmpty) ...[
               const Divider(color: C.border),
@@ -91,19 +130,34 @@ class EventDetailSheet extends StatelessWidget {
                         horizontal: 14, vertical: 10),
                     child: Row(
                       children: [
-                        const Icon(Icons.discount_rounded,
-                            color: C.rose, size: 16),
+                        const Icon(
+                          Icons.discount_rounded,
+                          color: C.rose,
+                          size: 16,
+                        ),
+
                         const SizedBox(width: 8),
-                        Text(p.code,
+
+                        Expanded(
+                          child: Text(
+                            p.code,
+                            overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
-                                fontWeight: FontWeight.w700,
-                                fontFamily: 'monospace')),
-                        const Spacer(),
-                        Text('${p.discountPct.toStringAsFixed(0)}% off',
-                            style:
-                                const TextStyle(fontSize: 12, color: C.rose)),
+                              fontWeight: FontWeight.w700,
+                              fontFamily: 'monospace',
+                            ),
+                          ),
+                        ),
+
+                        Text(
+                          '${p.discountPct.toStringAsFixed(0)}% off',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: C.rose,
+                          ),
+                        ),
                       ],
-                    ),
+                    )
                   )),
             ],
           ],

@@ -13,6 +13,13 @@ class OrgHome extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = context.watch<AppProvider>();
+    if (p.current == null) {
+      return const Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
     final user = p.current!;
     final myEvents = p.myEvents;
 
@@ -37,8 +44,15 @@ class OrgHome extends StatelessWidget {
                   color: Colors.white,
                 ),
                 onPressed: () {
-                  p.logout();
-                  Navigator.pushReplacementNamed(context, '/login');
+                  Navigator.pushNamedAndRemoveUntil(
+                    context,
+                    '/login',
+                        (route) => false,
+                  );
+
+                  Future.microtask(() {
+                    p.logout();
+                  });
                 },
               ),
             ],

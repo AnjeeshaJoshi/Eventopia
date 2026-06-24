@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
@@ -13,6 +15,10 @@ class EventDetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final now = DateTime.now();
+    final isPast = event.date.isBefore(DateTime(now.year, now.month, now.day));
+    final canBook = event.status == EventStatus.upcoming && !isPast;
+
     return Scaffold(
       backgroundColor: C.bg,
       body: CustomScrollView(
@@ -26,12 +32,27 @@ class EventDetailScreen extends StatelessWidget {
               background: Stack(
                 fit: StackFit.expand,
                 children: [
-                  Container(
-                    color: C.violet.withOpacity(0.1),
-                    child: Center(
-                      child: Icon(Icons.event_seat_rounded, size: 64, color: C.violet.withOpacity(0.2)),
+                  // Show poster image if available, else show placeholder
+                  if (event.posterPath != null)
+                    Image.file(
+                      File(event.posterPath!),
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => Container(
+                        color: C.violet.withOpacity(0.1),
+                        child: Center(
+                          child: Icon(Icons.event_seat_rounded,
+                              size: 64, color: C.violet.withOpacity(0.2)),
+                        ),
+                      ),
+                    )
+                  else
+                    Container(
+                      color: C.violet.withOpacity(0.1),
+                      child: Center(
+                        child: Icon(Icons.event_seat_rounded,
+                            size: 64, color: C.violet.withOpacity(0.2)),
+                      ),
                     ),
-                  ),
                   Container(
                     decoration: const BoxDecoration(
                       gradient: LinearGradient(
@@ -66,9 +87,9 @@ class EventDetailScreen extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      event.status == EventStatus.upcoming ? 'UPCOMING' : event.status.name.toUpperCase(),
+                      isPast ? 'COMPLETED' : (event.status == EventStatus.upcoming ? 'UPCOMING' : event.status.name.toUpperCase()),
                       style: TextStyle(
-                        color: event.status == EventStatus.upcoming ? C.teal : C.rose,
+                        color: isPast ? C.t3 : (event.status == EventStatus.upcoming ? C.teal : C.rose),
                         fontSize: 10,
                         fontWeight: FontWeight.bold,
                       ),
@@ -85,7 +106,7 @@ class EventDetailScreen extends StatelessWidget {
                 const SizedBox(height: 12),
                 _buildInfoRow(Icons.access_time_rounded, DateFormat('h:mm a').format(event.date)),
                 const SizedBox(height: 12),
-                _buildInfoRow(Icons.location_on_rounded, 'HELP Auditorium'),
+                _buildInfoRow(Icons.location_on_rounded, event.location),
                 const SizedBox(height: 24),
                 const SectionTitle(title: 'About', action: null),
                 const SizedBox(height: 12),
@@ -107,14 +128,22 @@ class EventDetailScreen extends StatelessWidget {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(t.category.label, style: const TextStyle(color: C.t1, fontWeight: FontWeight.w600, fontSize: 16)),
-                              const SizedBox(height: 4),
-                              Text('${t.capacity - t.sold} remaining', style: const TextStyle(color: C.t3, fontSize: 12)),
-                            ],
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  t.category.label,
+                                  style: const TextStyle(color: C.t1, fontWeight: FontWeight.w600, fontSize: 16),
+                                  overflow: TextOverflow.ellipsis,
+                                  maxLines: 1,
+                                ),
+                                const SizedBox(height: 4),
+                                Text('${t.capacity - t.sold} remaining', style: const TextStyle(color: C.t3, fontSize: 12)),
+                              ],
+                            ),
                           ),
+                          const SizedBox(width: 12),
                           Text('NPR ${t.price.toStringAsFixed(0)}', style: const TextStyle(color: C.violet, fontWeight: FontWeight.w700, fontSize: 18)),
                         ],
                       ),
@@ -131,8 +160,8 @@ class EventDetailScreen extends StatelessWidget {
         child: SizedBox(
           width: double.infinity,
           child: GBtn(
-            label: event.status == EventStatus.upcoming ? 'Book Now' : 'Not Available',
-            onTap: event.status == EventStatus.upcoming
+            label: isPast ? 'Event Ended' : (event.status == EventStatus.upcoming ? 'Book Now' : 'Not Available'),
+            onTap: canBook
                 ? () {
                     showModalBottomSheet(
                       context: context,

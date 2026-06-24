@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 // ── Enums ────────────────────────────────────────────────────────────────────
 enum UserRole { admin, organizer, attendee }
 
-enum EventStatus { upcoming, ongoing, completed, cancelled }
+enum EventStatus { planned, upcoming, ongoing, completed, cancelled, postponed }
 
 enum TicketCategory { vip, general, senior, child }
 
@@ -51,19 +51,23 @@ extension TicketCategoryX on TicketCategory {
 extension EventStatusX on EventStatus {
   String get label {
     switch (this) {
+      case EventStatus.planned:    return 'Planned';
       case EventStatus.upcoming:   return 'Upcoming';
       case EventStatus.ongoing:    return 'Live';
       case EventStatus.completed:  return 'Ended';
       case EventStatus.cancelled:  return 'Cancelled';
+      case EventStatus.postponed:  return 'Postponed';
     }
   }
 
   Color get color {
     switch (this) {
+      case EventStatus.planned:    return const Color(0xFFAAAAAA);
       case EventStatus.upcoming:   return const Color(0xFF38BDF8);
       case EventStatus.ongoing:    return const Color(0xFF38D9A9);
       case EventStatus.completed:  return const Color(0xFF55556A);
       case EventStatus.cancelled:  return const Color(0xFFFC5C7C);
+      case EventStatus.postponed:  return const Color(0xFFFACC15);
     }
   }
 }
@@ -132,6 +136,7 @@ class AppEvent {
   final String id;
   final String title;
   final String description;
+  final String location;
   final DateTime date;
   final TimeOfDay start;
   final TimeOfDay end;
@@ -140,11 +145,13 @@ class AppEvent {
   final EventStatus status;
   final List<TicketType> ticketTypes;
   final List<PromoCode> promoCodes;
+  final String? posterPath;
 
   AppEvent({
     required this.id,
     required this.title,
     required this.description,
+    required this.location,
     required this.date,
     required this.start,
     required this.end,
@@ -153,6 +160,7 @@ class AppEvent {
     required this.status,
     required this.ticketTypes,
     this.promoCodes = const [],
+    this.posterPath,
   });
 
   int get totalSeats =>

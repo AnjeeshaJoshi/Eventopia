@@ -8,6 +8,7 @@ import '../../auth/app_provider.dart';
 import '../../models.dart';
 import '../../theme.dart';
 import '../../widgets.dart';
+import '../screens/payment_gateway_screen.dart';
 import 'booking_confirmed_sheet.dart';
 
 class BookingSheet extends StatefulWidget {
@@ -47,32 +48,41 @@ class _BookingSheetState extends State<BookingSheet> {
 
   Future<void> _book() async {
     if (_cat == null) return;
-    setState(() => _loading = true);
 
-    final booking = context.read<AppProvider>().book(
-      eventId: _event.id,
-      category: _cat!,
-      quantity: _qty,
-      promoCode:
-      _promoCtrl.text.trim().isEmpty ? null : _promoCtrl.text.trim(),
-    );
+    // Navigate to payment gateway first
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => PaymentGatewayScreen(
+          totalAmount: _subtotal,
+          onPaymentSuccess: () {
+            // Process actual booking upon successful payment
+            final booking = context.read<AppProvider>().book(
+              eventId: _event.id,
+              category: _cat!,
+              quantity: _qty,
+              promoCode:
+                  _promoCtrl.text.trim().isEmpty ? null : _promoCtrl.text.trim(),
+            );
 
-    if (!mounted) return;
-    setState(() => _loading = false);
+            if (booking == null) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Booking failed. Please try again.')),
+              );
+              return;
+            }
 
-    if (booking == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Booking failed. Please try again.')),
-      );
-      return;
-    }
+            Navigator.pop(context); // Close the booking sheet
 
-    Navigator.pop(context);
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => BookingConfirmedSheet(booking: booking),
+            showModalBottomSheet(
+              context: context,
+              isScrollControlled: true,
+              backgroundColor: Colors.transparent,
+              builder: (_) => BookingConfirmedSheet(booking: booking),
+            );
+          },
+        ),
+      ),
     );
   }
 

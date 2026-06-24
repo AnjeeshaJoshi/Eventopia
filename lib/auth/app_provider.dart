@@ -8,7 +8,9 @@ const _uuid = Uuid();
 class AppProvider extends ChangeNotifier {
   // ── Auth ──────────────────────────────────────────────────────────────────
   AppUser? _current;
+
   AppUser? get current => _current;
+
   bool get isLoggedIn => _current != null;
 
   // ── Collections ───────────────────────────────────────────────────────────
@@ -20,13 +22,16 @@ class AppProvider extends ChangeNotifier {
   final List<AppNotification> _notifications = [];
 
   List<AppUser> get users => List.unmodifiable(_users);
+
   List<AppEvent> get events => List.unmodifiable(_events);
+
   List<Booking> get bookings => List.unmodifiable(_bookings);
+
   List<WaitlistEntry> get waitlist => List.unmodifiable(_waitlist);
+
   List<AppNotification> get notifications => List.unmodifiable(_notifications);
 
   // ── Register (attendees self-register; admin registers organisers) ─────────
-  /// Returns null on success, error string on failure.
   String? register({
     required String name,
     required String email,
@@ -35,8 +40,8 @@ class AppProvider extends ChangeNotifier {
     UserRole role = UserRole.attendee,
     String? organization,
   }) {
-    if (_users.any((u) =>
-    u.email.trim().toLowerCase() == email.trim().toLowerCase())) {
+    if (_users.any(
+        (u) => u.email.trim().toLowerCase() == email.trim().toLowerCase())) {
       return 'An account with this email already exists.';
     }
     final user = AppUser(
@@ -76,16 +81,19 @@ class AppProvider extends ChangeNotifier {
   AppEvent createEvent({
     required String title,
     required String description,
+    required String location,
     required DateTime date,
     required TimeOfDay start,
     required TimeOfDay end,
     required List<TicketType> ticketTypes,
     List<PromoCode> promoCodes = const [],
+    String? posterPath,
   }) {
     final event = AppEvent(
       id: _uuid.v4(),
       title: title,
       description: description,
+      location: location,
       date: date,
       start: start,
       end: end,
@@ -94,13 +102,69 @@ class AppProvider extends ChangeNotifier {
       status: EventStatus.upcoming,
       ticketTypes: ticketTypes,
       promoCodes: promoCodes,
+      posterPath: posterPath,
     );
     _events.add(event);
     notifyListeners();
     return event;
   }
 
-  // ── Booking ───────────────────────────────────────────────────────────────
+  void editEvent({
+    required String id,
+    required String title,
+    required String description,
+    required String location,
+    required DateTime date,
+    required TimeOfDay start,
+    required TimeOfDay end,
+    required List<TicketType> ticketTypes,
+    String? posterPath,
+  }) {
+    final idx = _events.indexWhere((e) => e.id == id);
+    if (idx >= 0) {
+      final old = _events[idx];
+      _events[idx] = AppEvent(
+        id: old.id,
+        title: title,
+        description: description,
+        location: location,
+        date: date,
+        start: start,
+        end: end,
+        organizerId: old.organizerId,
+        organizerName: old.organizerName,
+        status: old.status,
+        ticketTypes: ticketTypes,
+        promoCodes: old.promoCodes,
+        posterPath: posterPath,
+      );
+      notifyListeners();
+    }
+  }
+
+  void updateEventStatus(String eventId, EventStatus newStatus) {
+    final idx = _events.indexWhere((e) => e.id == eventId);
+    if (idx >= 0) {
+      final old = _events[idx];
+      _events[idx] = AppEvent(
+        id: old.id,
+        title: old.title,
+        description: old.description,
+        location: old.location,
+        date: old.date,
+        start: old.start,
+        end: old.end,
+        organizerId: old.organizerId,
+        organizerName: old.organizerName,
+        status: newStatus,
+        ticketTypes: old.ticketTypes,
+        promoCodes: old.promoCodes,
+        posterPath: old.posterPath,
+      );
+      notifyListeners();
+    }
+  } // ── Booking ───────────────────────────────────────────────────────────────
+
   /// Returns the booking or null if unavailable.
   Booking? book({
     required String eventId,
@@ -112,8 +176,7 @@ class AppProvider extends ChangeNotifier {
     if (idx < 0) return null;
     final event = _events[idx];
 
-    final typeIdx =
-    event.ticketTypes.indexWhere((t) => t.category == category);
+    final typeIdx = event.ticketTypes.indexWhere((t) => t.category == category);
     if (typeIdx < 0) return null;
     final type = event.ticketTypes[typeIdx];
     if (type.remaining < quantity) return null;
@@ -125,8 +188,8 @@ class AppProvider extends ChangeNotifier {
     if (promoCode != null) {
       try {
         final promo = event.promoCodes.firstWhere(
-              (p) =>
-          p.code.toUpperCase() == promoCode.toUpperCase() &&
+          (p) =>
+              p.code.toUpperCase() == promoCode.toUpperCase() &&
               p.valid &&
               p.forCategories.contains(category),
         );
@@ -153,11 +216,12 @@ class AppProvider extends ChangeNotifier {
       qrData: 'EMS-${_uuid.v4()}',
     );
     _bookings.add(booking);
-    
+
     addNotification(
       userId: _current!.id,
       title: 'Booking Confirmed!',
-      message: 'You have successfully booked $quantity ticket(s) for ${event.title}.',
+      message:
+          'You have successfully booked $quantity ticket(s) for ${event.title}.',
       type: NotificationType.booking,
     );
 
@@ -182,7 +246,7 @@ class AppProvider extends ChangeNotifier {
       }
     }
     _bookings.removeAt(idx);
-    
+
     addNotification(
       userId: b.attendeeId,
       title: 'Booking Cancelled',
@@ -196,8 +260,7 @@ class AppProvider extends ChangeNotifier {
 
   // ── Waitlist ──────────────────────────────────────────────────────────────
   WaitlistEntry joinWaitlist(String eventId) {
-    final pos =
-        _waitlist.where((w) => w.eventId == eventId).length + 1;
+    final pos = _waitlist.where((w) => w.eventId == eventId).length + 1;
     final entry = WaitlistEntry(
       id: _uuid.v4(),
       eventId: eventId,
@@ -208,7 +271,7 @@ class AppProvider extends ChangeNotifier {
       joinedAt: DateTime.now(),
     );
     _waitlist.add(entry);
-    
+
     final event = _events.firstWhere((e) => e.id == eventId);
     addNotification(
       userId: _current!.id,
@@ -221,16 +284,14 @@ class AppProvider extends ChangeNotifier {
     return entry;
   }
 
-  bool isOnWaitlist(String eventId) =>
-      _waitlist.any((w) =>
-      w.eventId == eventId && w.attendeeId == _current?.id);
+  bool isOnWaitlist(String eventId) => _waitlist
+      .any((w) => w.eventId == eventId && w.attendeeId == _current?.id);
 
   // ── Check-in (QR scan) ────────────────────────────────────────────────────
   /// Returns booking title on success, null on failure.
   String? checkIn(String qrData) {
-    final idx = _bookings.indexWhere((b) =>
-    b.qrData == qrData &&
-        b.status == BookingStatus.confirmed);
+    final idx = _bookings.indexWhere(
+        (b) => b.qrData == qrData && b.status == BookingStatus.confirmed);
     if (idx < 0) return null;
     // In a real app mutate status; for demo we just return the name
     notifyListeners();
@@ -253,19 +314,17 @@ class AppProvider extends ChangeNotifier {
   /// Simple revenue analytics for an event.
   Map<String, dynamic> analytics(String eventId) {
     final event = _events.firstWhere((e) => e.id == eventId);
-    final bs =
-    _bookings.where((b) => b.eventId == eventId).toList();
+    final bs = _bookings.where((b) => b.eventId == eventId).toList();
     final revenue = bs.fold<double>(0, (s, b) => s + b.total);
     final byCategory = <TicketCategory, int>{};
     for (final b in bs) {
-      byCategory[b.category] =
-          (byCategory[b.category] ?? 0) + b.quantity;
+      byCategory[b.category] = (byCategory[b.category] ?? 0) + b.quantity;
     }
     // Mock 7-day daily sales
     final now = DateTime.now();
     final daily = List.generate(
       7,
-          (i) => DailySales(
+      (i) => DailySales(
         date: now.subtract(Duration(days: 6 - i)),
         revenue: (i + 1) * 680.0 + event.id.hashCode % 200,
         tickets: (i + 1) * 9,
@@ -351,48 +410,92 @@ class AppProvider extends ChangeNotifier {
       notifyListeners();
     }
   }
+
+  void updateUser({
+    required String id,
+    required String name,
+    required String phone,
+    required String email,
+    String? organization,
+  }) {
+    final idx = _users.indexWhere((u) => u.id == id);
+
+    if (idx >= 0) {
+      final old = _users[idx];
+
+      _users[idx] = AppUser(
+        id: old.id,
+        name: name.trim(),
+        email: email.trim().toLowerCase(),
+        phone: phone.trim(),
+        role: old.role,
+        organization: organization?.trim(),
+        mustChangePassword: old.mustChangePassword,
+      );
+
+      if (_current?.id == id) {
+        _current = _users[idx];
+      }
+
+      notifyListeners();
+    }
+  }
+
+  void deleteUser(String id) {
+    // prevent deleting admin
+    final user = _users.firstWhere(
+      (u) => u.id == id,
+    );
+
+    if (user.role == UserRole.admin) return;
+
+    _users.removeWhere((u) => u.id == id);
+    _passwords.remove(user.email);
+
+    notifyListeners();
+  }
 }
 
 // ── Seed helpers ──────────────────────────────────────────────────────────────
 Map<String, String> _seedPasswords() => {
-  'admin@gmail.com': '123456',
-  'binita@gmail.com': '123456',
-  'kai@gmail.com': '123456',
-  'mia@gmail.com': '123456',
-};
+      'admin@gmail.com': '123456',
+      'binita@gmail.com': '123456',
+      'kai@gmail.com': '123456',
+      'mia@gmail.com': '123456',
+    };
 
 List<AppUser> _seedUsers() => [
-  const AppUser(
-    id: 'u-admin',
-    name: 'Anjeesha Joshi',
-    email: 'admin@gmail.com',
-    phone: '9826354769',
-    role: UserRole.admin,
-  ),
-  const AppUser(
-    id: 'u-org-1',
-    name: 'Binita Dulal',
-    email: 'binita@gmail.com',
-    phone: '9856245872',
-    role: UserRole.organizer,
-    organization: 'MusicWorks',
-  ),
-  const AppUser(
-    id: 'u-org-2',
-    name: 'Kai Tan',
-    email: 'kai@gmail.com',
-    phone: '9864578236',
-    role: UserRole.organizer,
-    organization: 'TechConf Asia',
-  ),
-  const AppUser(
-    id: 'u-att-1',
-    name: 'Mia Shrestha',
-    email: 'mia@gmail.com',
-    phone: '9802476532',
-    role: UserRole.attendee,
-  ),
-];
+      const AppUser(
+        id: 'u-admin',
+        name: 'Anjeesha Joshi',
+        email: 'admin@gmail.com',
+        phone: '9826354769',
+        role: UserRole.admin,
+      ),
+      const AppUser(
+        id: 'u-org-1',
+        name: 'Binita Dulal',
+        email: 'binita@gmail.com',
+        phone: '9856245872',
+        role: UserRole.organizer,
+        organization: 'MusicWorks',
+      ),
+      const AppUser(
+        id: 'u-org-2',
+        name: 'Kai Tan',
+        email: 'kai@gmail.com',
+        phone: '9864578236',
+        role: UserRole.organizer,
+        organization: 'TechConf Asia',
+      ),
+      const AppUser(
+        id: 'u-att-1',
+        name: 'Mia Shrestha',
+        email: 'mia@gmail.com',
+        phone: '9802476532',
+        role: UserRole.attendee,
+      ),
+    ];
 
 List<AppEvent> _seedEvents() {
   final now = DateTime.now();
@@ -401,7 +504,8 @@ List<AppEvent> _seedEvents() {
       id: 'evt-1',
       title: 'Harmony Live Concert',
       description:
-      'A spectacular night of live music across jazz, R&B and pop genres with internationally acclaimed artists.',
+          'A spectacular night of live music across jazz, R&B and pop genres with internationally acclaimed artists.',
+      location: 'HELP Auditorium',
       date: now.add(const Duration(days: 10)),
       start: const TimeOfDay(hour: 19, minute: 30),
       end: const TimeOfDay(hour: 23, minute: 0),
@@ -412,25 +516,25 @@ List<AppEvent> _seedEvents() {
         TicketType(
             id: _uuid.v4(),
             category: TicketCategory.vip,
-            price: 450,
+            price: 4500,
             capacity: 60,
             sold: 18),
         TicketType(
             id: _uuid.v4(),
             category: TicketCategory.general,
-            price: 150,
+            price: 3000,
             capacity: 300,
             sold: 142),
         TicketType(
             id: _uuid.v4(),
             category: TicketCategory.senior,
-            price: 90,
+            price: 2500,
             capacity: 80,
             sold: 24),
         TicketType(
             id: _uuid.v4(),
             category: TicketCategory.child,
-            price: 50,
+            price: 1000,
             capacity: 60,
             sold: 11),
       ],
@@ -447,7 +551,8 @@ List<AppEvent> _seedEvents() {
       id: 'evt-2',
       title: 'TechVision 2026 Conference',
       description:
-      'Asia\'s premier technology conference. Keynotes, workshops and networking with leaders from Google, Microsoft and regional startups.',
+          'Asia\'s premier technology conference. Keynotes, workshops and networking with leaders from Google, Microsoft and regional startups.',
+      location: 'Grand Hotel Convention Center',
       date: now.add(const Duration(days: 22)),
       start: const TimeOfDay(hour: 9, minute: 0),
       end: const TimeOfDay(hour: 18, minute: 0),
@@ -458,25 +563,25 @@ List<AppEvent> _seedEvents() {
         TicketType(
             id: _uuid.v4(),
             category: TicketCategory.vip,
-            price: 299,
+            price: 4000,
             capacity: 50,
             sold: 8),
         TicketType(
             id: _uuid.v4(),
             category: TicketCategory.general,
-            price: 99,
+            price: 3000,
             capacity: 400,
             sold: 213),
         TicketType(
             id: _uuid.v4(),
             category: TicketCategory.senior,
-            price: 60,
+            price: 2000,
             capacity: 60,
             sold: 14),
         TicketType(
             id: _uuid.v4(),
             category: TicketCategory.child,
-            price: 30,
+            price: 1000,
             capacity: 40,
             sold: 5),
       ],
@@ -499,7 +604,8 @@ List<AppEvent> _seedEvents() {
       id: 'evt-3',
       title: 'Flutter & Dart Workshop',
       description:
-      'Hands-on full-day workshop. Build three real-world Flutter apps from scratch. Suitable for beginner to intermediate developers.',
+          'Hands-on full-day workshop. Build three real-world Flutter apps from scratch. Suitable for beginner to intermediate developers.',
+      location: 'Tech Hub Building',
       date: now.add(const Duration(days: 35)),
       start: const TimeOfDay(hour: 10, minute: 0),
       end: const TimeOfDay(hour: 17, minute: 0),
@@ -510,13 +616,13 @@ List<AppEvent> _seedEvents() {
         TicketType(
             id: _uuid.v4(),
             category: TicketCategory.general,
-            price: 199,
+            price: 2000,
             capacity: 80,
             sold: 31),
         TicketType(
             id: _uuid.v4(),
             category: TicketCategory.senior,
-            price: 120,
+            price: 1500,
             capacity: 20,
             sold: 4),
       ],
@@ -536,7 +642,8 @@ List<AppEvent> _seedEvents() {
       id: 'evt-4',
       title: 'Jazz Night – Sold Out',
       description:
-      'An intimate evening of smooth jazz in the auditorium balcony.',
+          'An intimate evening of smooth jazz in the auditorium balcony.',
+      location: 'The Blue Note Lounge',
       date: now.add(const Duration(days: 5)),
       start: const TimeOfDay(hour: 20, minute: 0),
       end: const TimeOfDay(hour: 23, minute: 30),
@@ -547,13 +654,13 @@ List<AppEvent> _seedEvents() {
         TicketType(
             id: _uuid.v4(),
             category: TicketCategory.vip,
-            price: 500,
+            price: 4000,
             capacity: 40,
             sold: 40),
         TicketType(
             id: _uuid.v4(),
             category: TicketCategory.general,
-            price: 200,
+            price: 2000,
             capacity: 100,
             sold: 100),
       ],
