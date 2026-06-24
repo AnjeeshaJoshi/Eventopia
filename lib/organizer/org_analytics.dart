@@ -178,6 +178,7 @@ class _OrgAnalyticsState extends State<OrgAnalytics> {
           children: [
             //event selector
             DropdownButtonFormField<String>(
+              isExpanded: true,
               value: _selectedEventId,
               dropdownColor: C.card,
               decoration: InputDecoration(

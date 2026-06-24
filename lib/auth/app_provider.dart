@@ -23,7 +23,9 @@ class AppProvider extends ChangeNotifier {
 
   List<AppUser> get users => List.unmodifiable(_users);
 
-  List<AppEvent> get events => List.unmodifiable(_events);
+  List<AppEvent> get events => _events.where((e) => e.status != EventStatus.pending).toList();
+  List<AppEvent> get allEvents => List.unmodifiable(_events);
+  List<AppEvent> get pendingEvents => _events.where((e) => e.status == EventStatus.pending).toList();
 
   List<Booking> get bookings => List.unmodifiable(_bookings);
 
@@ -99,7 +101,7 @@ class AppProvider extends ChangeNotifier {
       end: end,
       organizerId: _current!.id,
       organizerName: _current!.name,
-      status: EventStatus.upcoming,
+      status: EventStatus.pending,
       ticketTypes: ticketTypes,
       promoCodes: promoCodes,
       posterPath: posterPath,
@@ -163,6 +165,14 @@ class AppProvider extends ChangeNotifier {
       );
       notifyListeners();
     }
+  }
+
+  void approveEvent(String id) {
+    updateEventStatus(id, EventStatus.upcoming);
+  }
+
+  void rejectEvent(String id) {
+    updateEventStatus(id, EventStatus.cancelled);
   }
 
   void deleteEvent(String eventId) {
@@ -374,21 +384,37 @@ class AppProvider extends ChangeNotifier {
   /// Simple revenue analytics for an event.
   Map<String, dynamic> analytics(String eventId) {
     final event = _events.firstWhere((e) => e.id == eventId);
-    final bs = _bookings.where((b) => b.eventId == eventId).toList();
-    final revenue = bs.fold<double>(0, (s, b) => s + b.total);
+    
+    double revenue = 0.0;
     final byCategory = <TicketCategory, int>{};
-    for (final b in bs) {
-      byCategory[b.category] = (byCategory[b.category] ?? 0) + b.quantity;
+    
+    for (final t in event.ticketTypes) {
+      if (t.sold > 0) {
+        revenue += t.sold * t.price;
+        byCategory[t.category] = t.sold;
+      }
     }
-    // Mock 7-day daily sales
+
+    // Mock 7-day daily sales based on actual revenue
     final now = DateTime.now();
     final daily = List.generate(
       7,
-      (i) => DailySales(
-        date: now.subtract(Duration(days: 6 - i)),
-        revenue: (i + 1) * 680.0 + event.id.hashCode % 200,
-        tickets: (i + 1) * 9,
-      ),
+      (i) {
+        if (revenue == 0) {
+          return DailySales(
+            date: now.subtract(Duration(days: 6 - i)),
+            revenue: 0,
+            tickets: 0,
+          );
+        }
+        // Distribute revenue across 7 days
+        final weights = [0.05, 0.10, 0.15, 0.20, 0.30, 0.15, 0.05];
+        return DailySales(
+          date: now.subtract(Duration(days: 6 - i)),
+          revenue: revenue * weights[i],
+          tickets: (event.bookedSeats * weights[i]).round(),
+        );
+      },
     );
     return {
       'event': event,

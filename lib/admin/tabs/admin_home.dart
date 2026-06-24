@@ -4,8 +4,8 @@ import 'package:provider/provider.dart';
 import '../../auth/app_provider.dart';
 import '../../theme.dart';
 import '../../widgets.dart';
-import '../widgets/qr_scan_dialog.dart';
 import '../widgets/quick_action.dart';
+import '../screens/admin_event_requests_screen.dart';
 import '../widgets/register_org_sheet.dart';
 import '../widgets/admin_event_action_sheet.dart';
 import 'admin_reports.dart';
@@ -184,12 +184,12 @@ class AdminHome extends StatelessWidget {
                     ),
                     const SizedBox(width: 12),
                     QuickAction(
-                      icon: Icons.qr_code_scanner_rounded,
-                      label: 'Scan\nQR',
-                      color: C.teal,
-                      onTap: () => showDialog(
-                        context: context,
-                        builder: (_) => QRScanDialog(),
+                      icon: Icons.assignment_late_rounded,
+                      label: 'Event\nRequests',
+                      color: C.amber,
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const AdminEventRequestsScreen()),
                       ),
                     ),
                     const SizedBox(width: 12),

@@ -114,6 +114,37 @@ class EventDetailScreen extends StatelessWidget {
                   event.description,
                   style: const TextStyle(color: C.t2, fontSize: 14, height: 1.6),
                 ),
+                if (event.promoCodes.any((p) => p.valid)) ...[
+                  const SizedBox(height: 16),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: C.teal.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: C.teal.withOpacity(0.3)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Row(
+                          children: [
+                            Icon(Icons.local_offer_rounded, color: C.teal, size: 18),
+                            SizedBox(width: 8),
+                            Text('Available Promo Codes', style: TextStyle(fontWeight: FontWeight.w700, color: C.teal)),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        ...event.promoCodes.where((p) => p.valid).map((p) => Padding(
+                              padding: const EdgeInsets.only(top: 4),
+                              child: Text(
+                                'Use code ${p.code} for ${p.discountPct.toStringAsFixed(0)}% off!',
+                                style: const TextStyle(fontSize: 13, color: C.teal, fontWeight: FontWeight.w600),
+                              ),
+                            )),
+                      ],
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 24),
                 const SectionTitle(title: 'Tickets', action: null),
                 const SizedBox(height: 12),

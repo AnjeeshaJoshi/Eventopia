@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 // ── Enums ────────────────────────────────────────────────────────────────────
 enum UserRole { admin, organizer, attendee }
 
-enum EventStatus { planned, upcoming, ongoing, completed, cancelled, postponed }
+enum EventStatus { planned, pending, upcoming, ongoing, completed, cancelled, postponed }
 
 enum TicketCategory { vip, general, senior, child }
 
@@ -52,6 +52,7 @@ extension EventStatusX on EventStatus {
   String get label {
     switch (this) {
       case EventStatus.planned:    return 'Planned';
+      case EventStatus.pending:    return 'Pending';
       case EventStatus.upcoming:   return 'Upcoming';
       case EventStatus.ongoing:    return 'Live';
       case EventStatus.completed:  return 'Ended';
@@ -63,6 +64,7 @@ extension EventStatusX on EventStatus {
   Color get color {
     switch (this) {
       case EventStatus.planned:    return const Color(0xFFAAAAAA);
+      case EventStatus.pending:    return const Color(0xFFFB923C); // Orange for pending
       case EventStatus.upcoming:   return const Color(0xFF38BDF8);
       case EventStatus.ongoing:    return const Color(0xFF38D9A9);
       case EventStatus.completed:  return const Color(0xFF55556A);
