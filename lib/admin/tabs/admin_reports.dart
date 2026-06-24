@@ -28,31 +28,89 @@ class _AdminReportsState extends State<AdminReports> {
       final pdf = pw.Document();
 
       pdf.addPage(
-        pw.Page(
+        pw.MultiPage(
+          pageFormat: PdfPageFormat.a4,
+          margin: const pw.EdgeInsets.all(32),
           build: (pw.Context context) {
-            return pw.Column(
-              crossAxisAlignment: pw.CrossAxisAlignment.start,
-              children: [
-                pw.Text('Analytics Report', style: pw.TextStyle(fontSize: 24, fontWeight: pw.FontWeight.bold)),
-                pw.SizedBox(height: 20),
-                pw.Text('Event: ${event.title}', style: const pw.TextStyle(fontSize: 18)),
-                pw.Text('Date: ${DateFormat('yyyy-MM-dd').format(event.date)}'),
-                pw.Text('Organizer: ${event.organizerName}'),
-                pw.SizedBox(height: 20),
-                pw.Text('KPIs:', style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold)),
-                pw.Text('Tickets Sold: ${event.bookedSeats} / ${event.totalSeats}'),
-                pw.Text('Total Revenue: NPR ${totalRevenue.toStringAsFixed(2)}'),
-                pw.Text('Occupancy Rate: ${(event.occupancyRate * 100).toStringAsFixed(0)}%'),
-                pw.Text('Available Seats: ${event.availableSeats}'),
-                pw.SizedBox(height: 20),
-                pw.Text('Sales by Category:', style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold)),
-                ...TicketCategory.values.map((cat) {
-                  final sold = byCategory[cat] ?? 0;
-                  if (sold == 0) return pw.SizedBox.shrink();
-                  return pw.Text('${cat.label}: $sold tickets');
-                }).toList(),
-              ],
-            );
+            return [
+              pw.Header(
+                level: 0,
+                child: pw.Row(
+                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                  children: [
+                    pw.Text('Eventopia Analytics', style: pw.TextStyle(fontSize: 28, fontWeight: pw.FontWeight.bold, color: PdfColors.deepPurple)),
+                    pw.Text('REPORT', style: pw.TextStyle(fontSize: 24, color: PdfColors.grey500)),
+                  ],
+                ),
+              ),
+              pw.SizedBox(height: 20),
+              pw.Container(
+                padding: const pw.EdgeInsets.all(16),
+                decoration: pw.BoxDecoration(
+                  color: PdfColors.grey100,
+                  borderRadius: const pw.BorderRadius.all(pw.Radius.circular(8)),
+                ),
+                child: pw.Column(
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
+                  children: [
+                    pw.Text('Event Details', style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold, color: PdfColors.deepPurple)),
+                    pw.SizedBox(height: 10),
+                    pw.Text('Name: ${event.title}', style: const pw.TextStyle(fontSize: 14)),
+                    pw.Text('Date: ${DateFormat('MMMM dd, yyyy').format(event.date)}', style: const pw.TextStyle(fontSize: 14)),
+                    pw.Text('Organizer: ${event.organizerName}', style: const pw.TextStyle(fontSize: 14)),
+                    pw.Text('Location: ${event.location}', style: const pw.TextStyle(fontSize: 14)),
+                  ],
+                ),
+              ),
+              pw.SizedBox(height: 30),
+              pw.Text('Key Performance Indicators', style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold, color: PdfColors.deepPurple)),
+              pw.SizedBox(height: 10),
+              pw.TableHelper.fromTextArray(
+                context: context,
+                border: null,
+                headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold, color: PdfColors.white),
+                headerDecoration: const pw.BoxDecoration(color: PdfColors.deepPurple),
+                cellHeight: 30,
+                cellAlignments: {
+                  0: pw.Alignment.centerLeft,
+                  1: pw.Alignment.centerRight,
+                },
+                data: [
+                  ['Metric', 'Value'],
+                  ['Total Tickets Sold', '${event.bookedSeats} / ${event.totalSeats}'],
+                  ['Total Revenue', 'NPR ${NumberFormat.compact().format(totalRevenue)}'],
+                  ['Occupancy Rate', '${(event.occupancyRate * 100).toStringAsFixed(1)}%'],
+                  ['Available Seats', '${event.availableSeats}'],
+                ],
+              ),
+              pw.SizedBox(height: 30),
+              pw.Text('Sales by Ticket Category', style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold, color: PdfColors.deepPurple)),
+              pw.SizedBox(height: 10),
+              pw.TableHelper.fromTextArray(
+                context: context,
+                border: null,
+                headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold, color: PdfColors.white),
+                headerDecoration: const pw.BoxDecoration(color: PdfColors.deepPurple300),
+                cellHeight: 30,
+                cellAlignments: {
+                  0: pw.Alignment.centerLeft,
+                  1: pw.Alignment.centerRight,
+                },
+                data: [
+                  ['Category', 'Tickets Sold'],
+                  ...TicketCategory.values.where((c) => (byCategory[c] ?? 0) > 0).map((cat) {
+                    final sold = byCategory[cat] ?? 0;
+                    return [cat.label, '$sold'];
+                  }).toList(),
+                ],
+              ),
+              pw.SizedBox(height: 40),
+              pw.Divider(),
+              pw.SizedBox(height: 10),
+              pw.Center(
+                child: pw.Text('Generated on ${DateFormat('MMMM dd, yyyy').format(DateTime.now())} by Eventopia System', style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey)),
+              ),
+            ];
           },
         ),
       );
@@ -143,6 +201,7 @@ class _AdminReportsState extends State<AdminReports> {
                   borderSide: const BorderSide(color: C.border),
                 ),
               ),
+              isExpanded: true,
               items: allEvents.map((e) {
                 return DropdownMenuItem(
                   value: e.id,

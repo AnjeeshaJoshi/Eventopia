@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../auth/app_provider.dart';
 import '../../widgets.dart';
+import '../widgets/admin_event_action_sheet.dart';
 
 class EventViewer extends StatelessWidget {
   const EventViewer({super.key});
@@ -38,7 +39,17 @@ class EventViewer extends StatelessWidget {
               itemCount: events.length,
               itemBuilder: (_, i) => Padding(
                 padding: const EdgeInsets.only(bottom: 14),
-                child: EventCard(event: events[i]),
+                child: EventCard(
+                  event: events[i],
+                  onTap: () {
+                    showModalBottomSheet(
+                      context: context,
+                      isScrollControlled: true,
+                      backgroundColor: Colors.transparent,
+                      builder: (_) => AdminEventActionSheet(event: events[i]),
+                    );
+                  },
+                ),
               ),
             ),
           ),

@@ -7,6 +7,7 @@ import '../../widgets.dart';
 import '../widgets/qr_scan_dialog.dart';
 import '../widgets/quick_action.dart';
 import '../widgets/register_org_sheet.dart';
+import '../widgets/admin_event_action_sheet.dart';
 import 'admin_reports.dart';
 import '../../models.dart';
 
@@ -166,8 +167,10 @@ class AdminHome extends StatelessWidget {
                 const SectionTitle(title: 'Quick Actions'),
                 const SizedBox(height: 12),
 
-                Row(
-                  children: [
+                IntrinsicHeight(
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
                     QuickAction(
                       icon: Icons.person_add_rounded,
                       label: 'Add\nOrganiser',
@@ -203,6 +206,7 @@ class AdminHome extends StatelessWidget {
                     ),
                   ],
                 ),
+                ),
 
                 const SizedBox(height: 24),
 
@@ -224,7 +228,7 @@ class AdminHome extends StatelessWidget {
                           context: context,
                           isScrollControlled: true,
                           backgroundColor: Colors.transparent,
-                          builder: (_) => _StatusChangeSheet(event: e),
+                          builder: (_) => AdminEventActionSheet(event: e),
                         );
                       },
                     ),
@@ -310,66 +314,3 @@ class AdminHome extends StatelessWidget {
   }
 }
 
-class _StatusChangeSheet extends StatefulWidget {
-  final AppEvent event;
-
-  const _StatusChangeSheet({required this.event});
-
-  @override
-  State<_StatusChangeSheet> createState() => _StatusChangeSheetState();
-}
-
-class _StatusChangeSheetState extends State<_StatusChangeSheet> {
-  late EventStatus _status;
-
-  @override
-  void initState() {
-    super.initState();
-    _status = widget.event.status;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(
-        color: C.surface,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      padding: EdgeInsets.fromLTRB(24, 16, 24, MediaQuery.of(context).viewInsets.bottom + 24),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Center(
-            child: Container(
-              width: 40,
-              height: 4,
-              margin: const EdgeInsets.only(bottom: 16),
-              decoration: BoxDecoration(color: C.border, borderRadius: BorderRadius.circular(2)),
-            ),
-          ),
-          const Text('Change Event Status', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
-          const SizedBox(height: 16),
-          ...EventStatus.values.map((s) {
-            return RadioListTile<EventStatus>(
-              title: Text(s.label),
-              value: s,
-              groupValue: _status,
-              activeColor: C.violet,
-              onChanged: (v) {
-                if (v != null) setState(() => _status = v);
-              },
-            );
-          }),
-          const SizedBox(height: 20),
-          GBtn(
-            label: 'Save Changes',
-            onTap: () {
-              context.read<AppProvider>().updateEventStatus(widget.event.id, _status);
-              Navigator.pop(context);
-            },
-          ),
-        ],
-      ),
-    );
-  }
-}

@@ -163,7 +163,17 @@ class AppProvider extends ChangeNotifier {
       );
       notifyListeners();
     }
-  } // ── Booking ───────────────────────────────────────────────────────────────
+  }
+
+  void deleteEvent(String eventId) {
+    _events.removeWhere((e) => e.id == eventId);
+    // Optionally delete related bookings and waitlists
+    _bookings.removeWhere((b) => b.eventId == eventId);
+    _waitlist.removeWhere((w) => w.eventId == eventId);
+    notifyListeners();
+  }
+
+  // ── Booking ───────────────────────────────────────────────────────────────
 
   /// Returns the booking or null if unavailable.
   Booking? book({
