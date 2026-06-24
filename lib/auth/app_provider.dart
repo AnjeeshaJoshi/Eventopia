@@ -54,7 +54,7 @@ class AppProvider extends ChangeNotifier {
       mustChangePassword: role == UserRole.organizer,
     );
     _users.add(user);
-    _passwords[user.email] = password;
+    _passwords[user.email] = password.trim();
     notifyListeners();
     return null;
   }
@@ -64,7 +64,7 @@ class AppProvider extends ChangeNotifier {
   String? login(String email, String password) {
     final e = email.trim().toLowerCase();
     final stored = _passwords[e];
-    if (stored == null || stored != password) {
+    if (stored == null || stored != password.trim()) {
       return 'Incorrect email or password.';
     }
     _current = _users.firstWhere((u) => u.email == e);
@@ -255,17 +255,67 @@ class AppProvider extends ChangeNotifier {
         _events[eventIdx].ticketTypes[typeIdx].sold -= b.quantity;
       }
     }
-    _bookings.removeAt(idx);
 
-    addNotification(
-      userId: b.attendeeId,
-      title: 'Booking Cancelled',
-      message: 'Your booking for ${b.eventTitle} has been cancelled.',
-      type: NotificationType.booking,
+    _bookings[idx] = Booking(
+      id: b.id,
+      eventId: b.eventId,
+      eventTitle: b.eventTitle,
+      attendeeId: b.attendeeId,
+      attendeeName: b.attendeeName,
+      category: b.category,
+      quantity: b.quantity,
+      subtotal: b.subtotal,
+      discount: b.discount,
+      promoCode: b.promoCode,
+      status: BookingStatus.cancelled,
+      createdAt: b.createdAt,
+      qrData: b.qrData,
+    );
+    notifyListeners();
+    return true;
+  }
+
+  // ── Verify Ticket (Organizer) ──────────────────────────────────────────────
+  String verifyTicket(String qrData) {
+    if (_current?.role != UserRole.organizer) return 'Unauthorized';
+
+    final idx = _bookings.indexWhere((b) => b.qrData == qrData);
+    if (idx < 0) return 'Invalid Ticket';
+
+    final booking = _bookings[idx];
+
+    final eventIdx = _events.indexWhere((e) => e.id == booking.eventId);
+    if (eventIdx < 0) return 'Event not found';
+    
+    final event = _events[eventIdx];
+    if (event.organizerId != _current?.id) {
+      return 'Ticket is for another organizer\'s event';
+    }
+
+    if (booking.status == BookingStatus.checkedIn) {
+      return 'Ticket already checked in';
+    } else if (booking.status == BookingStatus.cancelled) {
+      return 'Ticket is cancelled';
+    }
+
+    _bookings[idx] = Booking(
+      id: booking.id,
+      eventId: booking.eventId,
+      eventTitle: booking.eventTitle,
+      attendeeId: booking.attendeeId,
+      attendeeName: booking.attendeeName,
+      category: booking.category,
+      quantity: booking.quantity,
+      subtotal: booking.subtotal,
+      discount: booking.discount,
+      promoCode: booking.promoCode,
+      status: BookingStatus.checkedIn,
+      createdAt: booking.createdAt,
+      qrData: booking.qrData,
     );
 
     notifyListeners();
-    return true;
+    return 'Welcome to the booked event! (${booking.attendeeName})';
   }
 
   // ── Waitlist ──────────────────────────────────────────────────────────────
@@ -404,7 +454,7 @@ class AppProvider extends ChangeNotifier {
     final idx = _users.indexWhere((u) => u.id == userId);
     if (idx >= 0) {
       final user = _users[idx];
-      _passwords[user.email] = newPassword;
+      _passwords[user.email] = newPassword.trim();
       _users[idx] = AppUser(
         id: user.id,
         name: user.name,
@@ -419,6 +469,27 @@ class AppProvider extends ChangeNotifier {
       }
       notifyListeners();
     }
+  }
+
+  String? resetPassword(String email, String newPassword) {
+    final e = email.trim().toLowerCase();
+    final idx = _users.indexWhere((u) => u.email == e);
+    if (idx < 0) return 'Account not found.';
+    
+    _passwords[e] = newPassword.trim();
+    
+    final user = _users[idx];
+    _users[idx] = AppUser(
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      phone: user.phone,
+      role: user.role,
+      organization: user.organization,
+      mustChangePassword: false,
+    );
+    notifyListeners();
+    return null;
   }
 
   void updateUser({
@@ -512,13 +583,14 @@ List<AppEvent> _seedEvents() {
   return [
     AppEvent(
       id: 'evt-1',
-      title: 'Harmony Live Concert',
+      posterPath: 'assets/images/fest.png',
+      title: 'GZ Music Fest 2026',
       description:
-          'A spectacular night of live music across jazz, R&B and pop genres with internationally acclaimed artists.',
-      location: 'HELP Auditorium',
+          'Experience an unforgettable evening of live music featuring talented student performers, guest artists, and exciting band performances. Enjoy a vibrant atmosphere filled with entertainment, networking, and celebration of campus creativity.',
+      location: 'Hyatt Regency Ground',
       date: now.add(const Duration(days: 10)),
-      start: const TimeOfDay(hour: 19, minute: 30),
-      end: const TimeOfDay(hour: 23, minute: 0),
+      start: const TimeOfDay(hour: 14, minute: 30),
+      end: const TimeOfDay(hour: 17, minute: 45),
       organizerId: 'u-org-1',
       organizerName: 'Binita Dulal',
       status: EventStatus.upcoming,
@@ -550,22 +622,23 @@ List<AppEvent> _seedEvents() {
       ],
       promoCodes: [
         PromoCode(
-          code: 'HARMONY25',
+          code: 'FEST25',
           discountPct: 25,
           expiry: now.add(const Duration(days: 8)),
-          forCategories: [TicketCategory.general],
+          forCategories: [TicketCategory.general,TicketCategory.vip,TicketCategory.senior],
         ),
       ],
     ),
     AppEvent(
       id: 'evt-2',
-      title: 'TechVision 2026 Conference',
+      title: 'AI & Innovation Summit',
+      posterPath: 'assets/images/submit',
       description:
-          'Asia\'s premier technology conference. Keynotes, workshops and networking with leaders from Google, Microsoft and regional startups.',
-      location: 'Grand Hotel Convention Center',
+          'Join experts, researchers, and technology enthusiasts for discussions on Artificial Intelligence, emerging technologies, and digital innovation. The summit features keynote speeches, panel discussions, and demonstrations of cutting-edge solutions shaping the future.',
+      location: 'Hotel Yak & Yeti',
       date: now.add(const Duration(days: 22)),
-      start: const TimeOfDay(hour: 9, minute: 0),
-      end: const TimeOfDay(hour: 18, minute: 0),
+      start: const TimeOfDay(hour: 11, minute: 0),
+      end: const TimeOfDay(hour: 15, minute: 0),
       organizerId: 'u-org-2',
       organizerName: 'Kai Tan',
       status: EventStatus.upcoming,
@@ -573,13 +646,13 @@ List<AppEvent> _seedEvents() {
         TicketType(
             id: _uuid.v4(),
             category: TicketCategory.vip,
-            price: 4000,
+            price: 3000,
             capacity: 50,
             sold: 8),
         TicketType(
             id: _uuid.v4(),
             category: TicketCategory.general,
-            price: 3000,
+            price: 2500,
             capacity: 400,
             sold: 213),
         TicketType(
@@ -597,22 +670,17 @@ List<AppEvent> _seedEvents() {
       ],
       promoCodes: [
         PromoCode(
-          code: 'TECH50',
+          code: 'AI50',
           discountPct: 50,
           expiry: now.add(const Duration(days: 15)),
-          forCategories: [TicketCategory.general, TicketCategory.senior],
-        ),
-        PromoCode(
-          code: 'VIPTECH',
-          discountPct: 20,
-          expiry: now.add(const Duration(days: 15)),
-          forCategories: [TicketCategory.vip],
+          forCategories: [TicketCategory.general, TicketCategory.senior, TicketCategory.vip],
         ),
       ],
     ),
     AppEvent(
       id: 'evt-3',
-      title: 'Flutter & Dart Workshop',
+      title: 'Flutter Development Workshop',
+      posterPath: 'assets/images/workshop.jpg',
       description:
           'Hands-on full-day workshop. Build three real-world Flutter apps from scratch. Suitable for beginner to intermediate developers.',
       location: 'Tech Hub Building',
@@ -626,19 +694,19 @@ List<AppEvent> _seedEvents() {
         TicketType(
             id: _uuid.v4(),
             category: TicketCategory.general,
-            price: 2000,
+            price: 3000,
             capacity: 80,
             sold: 31),
         TicketType(
             id: _uuid.v4(),
             category: TicketCategory.senior,
-            price: 1500,
+            price: 2000,
             capacity: 20,
             sold: 4),
       ],
       promoCodes: [
         PromoCode(
-          code: 'DEV40',
+          code: 'FLU40',
           discountPct: 40,
           expiry: now.add(const Duration(days: 25)),
           forCategories: [
@@ -650,13 +718,14 @@ List<AppEvent> _seedEvents() {
     ),
     AppEvent(
       id: 'evt-4',
-      title: 'Jazz Night – Sold Out',
+      title: 'Career & Internship Expo 2026',
+      posterPath: 'assets/images/expo.jpg',
       description:
-          'An intimate evening of smooth jazz in the auditorium balcony.',
+          'Connect with leading companies, industry professionals, and recruiters seeking talented students and graduates. Attend career talks, networking sessions, resume reviews, and internship opportunities designed to help participants prepare for their future careers.',
       location: 'The Blue Note Lounge',
       date: now.add(const Duration(days: 5)),
-      start: const TimeOfDay(hour: 20, minute: 0),
-      end: const TimeOfDay(hour: 23, minute: 30),
+      start: const TimeOfDay(hour: 13, minute: 0),
+      end: const TimeOfDay(hour: 17, minute: 30),
       organizerId: 'u-org-1',
       organizerName: 'Binita Dulal',
       status: EventStatus.upcoming,

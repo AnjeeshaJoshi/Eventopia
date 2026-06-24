@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../auth/app_provider.dart';
 import '../theme.dart';
 import 'org_analytics.dart';
 import 'org_events.dart';
@@ -14,6 +16,17 @@ class OrganizerDashboard extends StatefulWidget {
 
 class _OrganizerDashboardState extends State<OrganizerDashboard> {
   int _tab = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final p = Provider.of<AppProvider>(context, listen: false);
+      if (p.current?.mustChangePassword == true) {
+        setState(() => _tab = 3);
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {

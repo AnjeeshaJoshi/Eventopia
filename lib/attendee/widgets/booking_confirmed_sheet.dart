@@ -1,13 +1,10 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:path_provider/path_provider.dart';
+import 'package:intl/intl.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
-import 'package:provider/provider.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
-import '../../auth/app_provider.dart';
 import '../../models.dart';
 import '../../theme.dart';
 import '../../widgets.dart';
@@ -17,62 +14,135 @@ class BookingConfirmedSheet extends StatelessWidget {
 
   const BookingConfirmedSheet({super.key, required this.booking});
 
-  Future<void> _downloadPdf(BuildContext context) async {
+  Future<void> _downloadTicketPdf(BuildContext context) async {
     try {
       final pdf = pw.Document();
 
       pdf.addPage(
         pw.Page(
-          build: (pw.Context context) {
-            return pw.Center(
-              child: pw.Column(
-                mainAxisAlignment: pw.MainAxisAlignment.center,
-                children: [
-                  pw.Text('Eventopia Ticket', style: pw.TextStyle(fontSize: 24, fontWeight: pw.FontWeight.bold)),
-                  pw.SizedBox(height: 20),
-                  pw.Text('Event: ${booking.eventTitle}', style: const pw.TextStyle(fontSize: 18)),
-                  pw.SizedBox(height: 10),
-                  pw.Text('Category: ${booking.category.label}'),
-                  pw.Text('Quantity: ${booking.quantity}'),
-                  pw.Text('Section: ${booking.category.section}'),
-                  pw.Text('Total Paid: NPR ${booking.total.toStringAsFixed(2)}'),
-                  pw.SizedBox(height: 20),
-                  pw.Text('Ref: ${booking.id.substring(0, 8).toUpperCase()}'),
-                  pw.SizedBox(height: 20),
-                  pw.BarcodeWidget(
-                    barcode: pw.Barcode.qrCode(),
-                    data: booking.qrData,
-                    width: 150,
-                    height: 150,
+          pageFormat: PdfPageFormat.a4,
+          margin: const pw.EdgeInsets.all(32),
+          build: (pw.Context ctx) {
+            return pw.Column(
+              children: [
+                // Header
+                pw.Container(
+                  padding: const pw.EdgeInsets.all(20),
+                  decoration: pw.BoxDecoration(
+                    color: PdfColors.deepPurple50,
+                    borderRadius:
+                        const pw.BorderRadius.all(pw.Radius.circular(8)),
                   ),
-                ],
-              ),
+                  child: pw.Row(
+                    mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                    children: [
+                      pw.Column(
+                        crossAxisAlignment: pw.CrossAxisAlignment.start,
+                        children: [
+                          pw.Text('EVENTOPIA',
+                              style: pw.TextStyle(
+                                  fontSize: 22,
+                                  fontWeight: pw.FontWeight.bold,
+                                  color: PdfColors.deepPurple)),
+                          pw.SizedBox(height: 4),
+                          pw.Text('E-TICKET',
+                              style: pw.TextStyle(
+                                  fontSize: 14,
+                                  color: PdfColors.deepPurple300)),
+                        ],
+                      ),
+                      pw.Text('CONFIRMED',
+                          style: pw.TextStyle(
+                              fontSize: 14,
+                              fontWeight: pw.FontWeight.bold,
+                              color: PdfColors.green)),
+                    ],
+                  ),
+                ),
+                pw.SizedBox(height: 24),
+
+                // Event title
+                pw.Text(booking.eventTitle,
+                    style: pw.TextStyle(
+                        fontSize: 20, fontWeight: pw.FontWeight.bold)),
+                pw.SizedBox(height: 20),
+
+                // Details table
+                pw.TableHelper.fromTextArray(
+                  context: ctx,
+                  border: null,
+                  headerStyle: pw.TextStyle(
+                      fontWeight: pw.FontWeight.bold,
+                      color: PdfColors.white),
+                  headerDecoration:
+                      const pw.BoxDecoration(color: PdfColors.deepPurple),
+                  cellHeight: 30,
+                  cellAlignments: {
+                    0: pw.Alignment.centerLeft,
+                    1: pw.Alignment.centerRight,
+                  },
+                  data: [
+                    ['Detail', 'Info'],
+                    ['Ticket Type', booking.category.label],
+                    ['Quantity', '${booking.quantity}'],
+                    ['Section', booking.category.section],
+                    if (booking.discount > 0)
+                      ['Discount', '- NPR ${booking.discount.toStringAsFixed(2)}'],
+                    ['Total Paid', 'NPR ${booking.total.toStringAsFixed(2)}'],
+                    ['Booked On', DateFormat('dd MMM yyyy').format(booking.createdAt)],
+                    ['Reference', booking.id.substring(0, 8).toUpperCase()],
+                  ],
+                ),
+
+                pw.SizedBox(height: 30),
+
+                // QR Code
+                pw.Center(
+                  child: pw.Column(
+                    children: [
+                      pw.Text('Scan this QR at entry',
+                          style: const pw.TextStyle(
+                              fontSize: 12, color: PdfColors.grey600)),
+                      pw.SizedBox(height: 10),
+                      pw.BarcodeWidget(
+                        barcode: pw.Barcode.qrCode(),
+                        data: booking.qrData,
+                        width: 140,
+                        height: 140,
+                      ),
+                    ],
+                  ),
+                ),
+
+                pw.Spacer(),
+
+                // Footer
+                pw.Divider(color: PdfColors.grey300),
+                pw.SizedBox(height: 8),
+                pw.Center(
+                  child: pw.Text(
+                    'Generated by Eventopia on ${DateFormat('MMMM dd, yyyy').format(DateTime.now())}',
+                    style: const pw.TextStyle(
+                        fontSize: 9, color: PdfColors.grey),
+                  ),
+                ),
+              ],
             );
           },
         ),
       );
 
-      final dir = await getApplicationDocumentsDirectory();
-      final file = File('${dir.path}/ticket_${booking.id.substring(0, 8)}.pdf');
-      await file.writeAsBytes(await pdf.save());
+      final bytes = await pdf.save();
 
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Ticket saved to ${file.path}'),
-            action: SnackBarAction(
-              label: 'Print/Share',
-              onPressed: () {
-                Printing.sharePdf(bytes: file.readAsBytesSync(), filename: 'ticket.pdf');
-              },
-            ),
-          ),
-        );
-      }
+      // Use Printing.sharePdf which works reliably across platforms
+      await Printing.sharePdf(
+        bytes: bytes,
+        filename: 'eventopia_ticket_${booking.id.substring(0, 8)}.pdf',
+      );
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to generate PDF')),
+          SnackBar(content: Text('Failed to generate PDF: $e')),
         );
       }
     }
@@ -103,7 +173,7 @@ class BookingConfirmedSheet extends StatelessWidget {
               ),
             ),
 
-// Success badge
+            // Success badge
             Center(
               child: Column(
                 children: [
@@ -118,11 +188,11 @@ class BookingConfirmedSheet extends StatelessWidget {
                         color: C.teal, size: 42),
                   ),
                   const SizedBox(height: 12),
-                  const Text('Booking Confirmed!',
+                  const Text('Ticket Confirmed!',
                       style:
                           TextStyle(fontSize: 20, fontWeight: FontWeight.w700)),
                   const SizedBox(height: 4),
-                  const Text('Show QR code at entry',
+                  const Text('Show this QR code at entry',
                       style: TextStyle(fontSize: 13, color: C.t2)),
                 ],
               ),
@@ -130,7 +200,7 @@ class BookingConfirmedSheet extends StatelessWidget {
 
             const SizedBox(height: 24),
 
-// QR code
+            // QR code
             Center(
               child: Container(
                 width: 200,
@@ -139,6 +209,14 @@ class BookingConfirmedSheet extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: C.border),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
                 ),
                 child: QrImageView(
                   data: booking.qrData,
@@ -149,7 +227,7 @@ class BookingConfirmedSheet extends StatelessWidget {
 
             const SizedBox(height: 20),
 
-// Booking details card
+            // Booking details card
             GCard(
               child: Column(
                 children: [
@@ -187,17 +265,24 @@ class BookingConfirmedSheet extends StatelessWidget {
               children: [
                 Expanded(
                   child: GBtn(
-                    label: 'Download PDF',
-                    onTap: () => _downloadPdf(context),
+                    label: 'Ticket',
+                    onTap: () => _downloadTicketPdf(context),
                     icon: Icons.download_rounded,
-                    gradient: LinearGradient(colors: [C.sky, C.indigo]),
+                    gradient: const LinearGradient(colors: [C.sky, C.indigo]),
                   ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: GBtn(
                     label: 'Done',
-                    onTap: () => Navigator.pop(context),
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.pushNamed(
+                        context,
+                        '/tickets',
+                      );
+                    },
+
                     gradient: C.gTeal,
                   ),
                 ),

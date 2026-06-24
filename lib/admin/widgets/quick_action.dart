@@ -24,6 +24,7 @@ class QuickAction extends StatelessWidget {
           border: Border.all(color: color.withOpacity(.25)),
         ),
         child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(icon, color: color, size: 26),
             const SizedBox(height: 8),

@@ -1,3 +1,4 @@
+import 'package:ems_app/admin/tabs/admin_profile.dart';
 import 'package:ems_app/admin/tabs/checkin_tab.dart';
 import 'package:flutter/material.dart';
 import '../theme.dart';
@@ -14,11 +15,11 @@ class AdminDashboard extends StatefulWidget {
 class _AdminDashboardState extends State<AdminDashboard> {
   int _tab = 0;
 
-  final pages = const [
-    AdminHome(),
-    OrganizerManager(),
-    EventViewer(),
-    CheckInTab(),
+  final pages = [
+    const AdminHome(),
+    const OrganizerManager(),
+    const EventViewer(),
+    AdminProfile(),
   ];
 
   @override
@@ -39,9 +40,9 @@ class _AdminDashboardState extends State<AdminDashboard> {
 
         items: const [
               BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-              BottomNavigationBarItem(icon: Icon(Icons.people), label: 'Organisers'),
+              BottomNavigationBarItem(icon: Icon(Icons.people), label: 'Users'),
               BottomNavigationBarItem(icon: Icon(Icons.event), label: 'Events'),
-              BottomNavigationBarItem(icon: Icon(Icons.qr_code_scanner), label: 'Check-In'),
+              BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
             ],
           ),
     );

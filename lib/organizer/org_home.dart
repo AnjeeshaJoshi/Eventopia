@@ -6,6 +6,7 @@ import '../theme.dart';
 import '../widgets.dart';
 import 'widgets/create_event_sheet.dart';
 import 'widgets/event_detail_sheet.dart';
+import 'qr_scanner_screen.dart';
 
 class OrgHome extends StatelessWidget {
   const OrgHome({super.key});
@@ -38,6 +39,18 @@ class OrgHome extends StatelessWidget {
             pinned: true,
             backgroundColor: Colors.transparent,
             actions: [
+              IconButton(
+                icon: const Icon(
+                  Icons.qr_code_scanner_rounded,
+                  color: Colors.white,
+                ),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const QrScannerScreen()),
+                  );
+                },
+              ),
               IconButton(
                 icon: const Icon(
                   Icons.logout_rounded,

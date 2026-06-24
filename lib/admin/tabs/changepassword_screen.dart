@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../auth/app_provider.dart';
 
 class ChangePasswordScreen extends StatefulWidget {
   const ChangePasswordScreen({super.key});
@@ -10,6 +12,7 @@ class ChangePasswordScreen extends StatefulWidget {
 class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
   final _formKey = GlobalKey<FormState>();
 
+  final _email = TextEditingController();
   final _newPassword = TextEditingController();
   final _confirmPassword = TextEditingController();
 
@@ -18,6 +21,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
 
   @override
   void dispose() {
+    _email.dispose();
     _newPassword.dispose();
     _confirmPassword.dispose();
     super.dispose();
@@ -26,9 +30,21 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
   void _resetPassword() {
     if (!_formKey.currentState!.validate()) return;
 
+    final err = context.read<AppProvider>().resetPassword(
+      _email.text,
+      _newPassword.text,
+    );
+
+    if (err != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(err), backgroundColor: Colors.red),
+      );
+      return;
+    }
+
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
-        content: Text('Password changed successfully'),
+        content: Text('Password changed successfully. Please login.'),
       ),
     );
 
@@ -90,6 +106,24 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                   key: _formKey,
                   child: Column(
                     children: [
+                      TextFormField(
+                        controller: _email,
+                        keyboardType: TextInputType.emailAddress,
+                        decoration: InputDecoration(
+                          labelText: 'Email Address',
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          prefixIcon: const Icon(Icons.email_outlined),
+                        ),
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) {
+                            return 'Email is required';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 20),
                       TextFormField(
                         controller: _newPassword,
                         obscureText: _hidePassword,

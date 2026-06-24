@@ -1,8 +1,6 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
@@ -115,27 +113,12 @@ class _AdminReportsState extends State<AdminReports> {
         ),
       );
 
-      final dir = await getApplicationDocumentsDirectory();
-      final file = File('${dir.path}/report_${event.id}.pdf');
-      await file.writeAsBytes(await pdf.save());
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Report saved to ${file.path}'),
-            action: SnackBarAction(
-              label: 'Share',
-              onPressed: () {
-                Printing.sharePdf(bytes: file.readAsBytesSync(), filename: 'report.pdf');
-              },
-            ),
-          ),
-        );
-      }
+      final bytes = await pdf.save();
+      await Printing.sharePdf(bytes: bytes, filename: 'report_${event.id.length >= 8 ? event.id.substring(0, 8) : event.id}.pdf');
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to generate PDF')),
+          SnackBar(content: Text('Failed to generate PDF: $e')),
         );
       }
     }
@@ -168,7 +151,7 @@ class _AdminReportsState extends State<AdminReports> {
     final daily = (data['daily'] as List<DailySales>);
     final byCategory = data['byCategory'] as Map<TicketCategory, int>;
 
-    final totalRevenue = data['totalRevenue'] ?? 0;
+    final totalRevenue = (data['totalRevenue'] as num?)?.toDouble() ?? 0.0;
 
     final maxRevenue = daily.isEmpty
         ? 0.0

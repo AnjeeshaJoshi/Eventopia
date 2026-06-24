@@ -1,6 +1,7 @@
 import 'package:ems_app/models.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+
 import '../admin/tabs/changepassword_screen.dart';
 import '../theme.dart';
 import '../widgets.dart';
@@ -58,28 +59,16 @@ class _LoginScreenState extends State<LoginScreen> {
     } else {
       final user = prov.current!;
       if (user.role == UserRole.organizer && user.mustChangePassword) {
-        showDialog(
-          context: context,
-          barrierDismissible: false,
-          builder: (ctx) => AlertDialog(
-            title: const Text('Password Update Required'),
-            content: const Text(
-                'As a first-time organizer, you must change your default password to continue.'),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  Navigator.pop(ctx); // Close dialog
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (_) => const ChangePasswordScreen()),
-                  );
-                },
-                child: const Text('Change Password'),
-              ),
-            ],
-          ),
-        );
+        // Navigate to organizer dashboard (profile tab) for password change
+        Navigator.pushReplacementNamed(context, '/organizer');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Please change your default password to continue.'),
+              duration: Duration(seconds: 4),
+            ),
+          );
+        }
       } else {
         _navigate(user.role);
       }

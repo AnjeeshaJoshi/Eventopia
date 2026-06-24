@@ -68,7 +68,7 @@ class _AdminEventActionSheetState extends State<AdminEventActionSheet> {
               Expanded(
                 child: GBtn(
                   label: 'Delete Event',
-                  color: C.rose,
+                  gradient: const LinearGradient(colors: [C.rose, C.rose]),
                   onTap: () {
                     // Show confirmation dialog before deleting
                     showDialog(

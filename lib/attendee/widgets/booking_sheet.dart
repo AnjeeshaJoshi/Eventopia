@@ -25,6 +25,7 @@ class _BookingSheetState extends State<BookingSheet> {
   bool _loading = false;
   String? _promoError;
   String? _promoSuccess;
+  double _discountPct = 0;
 
   @override
   void dispose() {
@@ -46,15 +47,48 @@ class _BookingSheetState extends State<BookingSheet> {
 
   double get _subtotal => _basePrice * _qty;
 
-  Future<void> _book() async {
+  double get _discount => _subtotal * (_discountPct / 100);
+
+  double get _total => _subtotal - _discount;
+
+  void _applyPromo() {
+    final code = _promoCtrl.text.trim().toUpperCase();
+    if (code.isEmpty) return;
+    try {
+      final promo = _event.promoCodes.firstWhere((p) =>
+          p.code.toUpperCase() == code &&
+          p.valid &&
+          (_cat == null || p.forCategories.contains(_cat)));
+      setState(() {
+        _promoError = null;
+        _promoSuccess =
+            'Code applied! ${promo.discountPct.toStringAsFixed(0)}% discount';
+        _discountPct = promo.discountPct;
+      });
+    } catch (_) {
+      setState(() {
+        _promoError = 'Invalid or expired code';
+        _promoSuccess = null;
+        _discountPct = 0;
+      });
+    }
+  }
+
+  Future<void> _proceedToPayment() async {
     if (_cat == null) return;
 
-    // Navigate to payment gateway first
+    // Navigate to payment gateway with the final total (after discount)
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (_) => PaymentGatewayScreen(
-          totalAmount: _subtotal,
+          totalAmount: _total,
+          subtotal: _subtotal,
+          discount: _discount,
+          promoCode: _discountPct > 0 ? _promoCtrl.text.trim() : null,
+          eventTitle: _event.title,
+          category: _cat!,
+          quantity: _qty,
           onPaymentSuccess: () {
             // Process actual booking upon successful payment
             final booking = context.read<AppProvider>().book(
@@ -142,7 +176,13 @@ class _BookingSheetState extends State<BookingSheet> {
             ..._available.map((type) {
               final selected = _cat == type.category;
               return GestureDetector(
-                onTap: () => setState(() => _cat = type.category),
+                onTap: () => setState(() {
+                  _cat = type.category;
+                  // Re-validate promo code when category changes
+                  if (_promoCtrl.text.trim().isNotEmpty && _discountPct > 0) {
+                    _applyPromo();
+                  }
+                }),
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 200),
                   margin: const EdgeInsets.only(bottom: 8),
@@ -253,22 +293,9 @@ class _BookingSheetState extends State<BookingSheet> {
                 const SizedBox(width: 10),
                 GBtn(
                   label: 'Apply',
-                  width: 80,
+                  width: 90,
                   height: 50,
-                  onTap: () {
-                    final code = _promoCtrl.text.trim().toUpperCase();
-                    if (code.isEmpty) return;
-                    final found = _event.promoCodes.any((p) =>
-                    p.code.toUpperCase() == code &&
-                        p.valid &&
-                        (_cat == null ||
-                            p.forCategories.contains(_cat)));
-                    setState(() {
-                      _promoError = found ? null : 'Invalid or expired code';
-                      _promoSuccess =
-                      found ? 'Code applied!' : null;
-                    });
-                  },
+                  onTap: _applyPromo,
                   gradient: C.gTeal,
                 ),
               ],
@@ -301,42 +328,57 @@ class _BookingSheetState extends State<BookingSheet> {
                         fontSize: 13, fontWeight: FontWeight.w600)),
               ],
             ),
-            const SizedBox(height: 4),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: const [
-                Text('Service fee',
-                    style: TextStyle(fontSize: 13, color: C.t2)),
-                Text('NPR 0.00',
-                    style: TextStyle(
-                        fontSize: 13, fontWeight: FontWeight.w600)),
-              ],
-            ),
+            if (_discount > 0) ...[
+              const SizedBox(height: 4),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Discount (${_discountPct.toStringAsFixed(0)}%)',
+                    style: const TextStyle(fontSize: 13, color: C.teal),
+                  ),
+                  Text('- NPR ${_discount.toStringAsFixed(2)}',
+                      style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: C.teal)),
+                ],
+              ),
+            ],
             const SizedBox(height: 8),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text('Total',
-                    style: TextStyle(
-                        fontSize: 16, fontWeight: FontWeight.w700)),
-                Text('NPR ${_subtotal.toStringAsFixed(2)}',
-                    style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                        color: C.teal)),
-              ],
+            Container(
+              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 14),
+              decoration: BoxDecoration(
+                color: C.violet.withOpacity(0.05),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: C.violet.withOpacity(0.15)),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text('Total',
+                      style: TextStyle(
+                          fontSize: 16, fontWeight: FontWeight.w700)),
+                  Text('NPR ${_total.toStringAsFixed(2)}',
+                      style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                          color: C.violet)),
+                ],
+              ),
             ),
 
             const SizedBox(height: 20),
-
-            GBtn(
+            Padding(padding: const EdgeInsets.symmetric(horizontal: 50),
+            child: GBtn(
               label: _cat == null
                   ? 'Select a ticket type'
-                  : 'Confirm Booking – NPR ${_subtotal.toStringAsFixed(2)}',
-              onTap: _cat != null ? _book : null,
+                  : 'Proceed to pay',
+              onTap: _cat != null ? _proceedToPayment : null,
               loading: _loading,
               gradient: C.gPrimary,
-              icon: Icons.confirmation_number_rounded,
+              icon: Icons.payment_rounded,
+            ),
             ),
           ],
         ),

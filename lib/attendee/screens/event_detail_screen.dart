@@ -156,7 +156,7 @@ class EventDetailScreen extends StatelessWidget {
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
       floatingActionButton: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20),
+        padding: const EdgeInsets.symmetric(horizontal: 80),
         child: SizedBox(
           width: double.infinity,
           child: GBtn(

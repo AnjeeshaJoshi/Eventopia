@@ -22,78 +22,119 @@ class AttendeeHome extends StatelessWidget {
         .toList();
 
     return Scaffold(
-      backgroundColor: C.bg,
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            // Header
-            Container(
-              padding: const EdgeInsets.fromLTRB(20, 60, 20, 24),
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [C.rose, C.amber],
-                ),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        'HELP Events',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 18,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                      IconButton(
-                        icon: const Icon(
-                          Icons.logout_rounded,
-                          color: Colors.white,
-                          size: 22,
-                        ),
-                        onPressed: () {
-                          Navigator.pushNamedAndRemoveUntil(
-                            context,
-                            '/login',
-                                (route) => false,
-                          );
+      body: CustomScrollView(
+        slivers: [
+        SliverAppBar(
+        expandedHeight: 130,
+        pinned: true,
+        backgroundColor: Colors.transparent,
+        actions: [
+          IconButton(
+            icon: const Icon(
+              Icons.logout_rounded,
+              color: Colors.white,
+            ),
+            onPressed: () {
+              Navigator.pushNamedAndRemoveUntil(
+                context,
+                '/login',
+                    (route) => false,
+              );
 
-                          Future.microtask(() {
-                            p.logout();
-                          });
-                        },
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-                  const Text(
-                    'Good day 👋',
-                    style: TextStyle(fontSize: 14, color: Colors.white70),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    user.name,
-                    style: const TextStyle(
-                      fontSize: 26,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  const Text(
-                    'Find and book your next event',
-                    style: TextStyle(fontSize: 14, color: Colors.white70),
-                  ),
+              Future.microtask(() {
+                p.logout();
+              });
+            },
+          ),
+        ],
+        flexibleSpace: FlexibleSpaceBar(
+          background: Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  C.rose,
+                  C.amber,
                 ],
               ),
             ),
-            
-            // Content
+            child: SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  20,
+                  12,
+                  20,
+                  16,
+                ),
+                child: Align(
+                  alignment: Alignment.bottomLeft,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(15),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(.2),
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          child: const Icon(
+                            Icons.person,
+                            color: Colors.white,
+                            size: 24,
+                          ),
+                        ),
+
+                        const SizedBox(width: 12),
+
+                        Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment:
+                          CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              user.organization ?? 'Attendee',
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: Colors.white70,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              user.name,
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w700,
+                                color: Colors.white,
+                              ),
+                            ),
+                            const SizedBox(height: 1),
+                            Text(
+                              'Discover. Connect. Celebrate.',
+                              style: TextStyle(
+                                fontSize: 10,
+                                color: Colors.white70,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+
+      SliverToBoxAdapter(
+        child:
             Padding(
               padding: const EdgeInsets.all(20),
               child: Column(
@@ -122,16 +163,16 @@ class AttendeeHome extends StatelessWidget {
                       ),
                     ],
                   ),
-                  
+
                   const SizedBox(height: 32),
-                  
+
                   SectionTitle(
                     title: 'Upcoming Events',
                     action: 'See all',
                     onAction: () {},
                   ),
                   const SizedBox(height: 16),
-                  
+
                   if (upcoming.isEmpty)
                     const Center(
                       child: Padding(
@@ -150,14 +191,14 @@ class AttendeeHome extends StatelessWidget {
                             onTap: () => _openBooking(context, e),
                           ),
                         )),
-                        
+
                   const SizedBox(height: 40),
                 ],
               ),
             ),
+      ),
           ],
         ),
-      ),
     );
   }
 

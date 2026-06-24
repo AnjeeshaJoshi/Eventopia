@@ -188,6 +188,16 @@ class OrgProfile extends StatelessWidget {
                               return;
                             }
 
+                            if (newPassCtrl.text.length < 6) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Password must be at least 6 characters'),
+                                ),
+                              );
+                              return;
+                            }
+
+                            p.changePassword(user.id, newPassCtrl.text);
                             Navigator.pop(context);
 
                             ScaffoldMessenger.of(context).showSnackBar(

@@ -1,8 +1,6 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
@@ -29,55 +27,96 @@ class _OrgAnalyticsState extends State<OrgAnalytics> {
 
       pdf.addPage(
         pw.Page(
+          pageFormat: PdfPageFormat.a4,
+          margin: const pw.EdgeInsets.all(32),
           build: (pw.Context context) {
             return pw.Column(
               crossAxisAlignment: pw.CrossAxisAlignment.start,
               children: [
-                pw.Text('Analytics Report', style: pw.TextStyle(fontSize: 24, fontWeight: pw.FontWeight.bold)),
-                pw.SizedBox(height: 20),
-                pw.Text('Event: ${event.title}', style: const pw.TextStyle(fontSize: 18)),
-                pw.Text('Date: ${DateFormat('yyyy-MM-dd').format(event.date)}'),
-                pw.Text('Organizer: ${event.organizerName}'),
-                pw.SizedBox(height: 20),
-                pw.Text('KPIs:', style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold)),
-                pw.Text('Tickets Sold: ${event.bookedSeats} / ${event.totalSeats}'),
-                pw.Text('Total Revenue: NPR ${totalRevenue.toStringAsFixed(2)}'),
-                pw.Text('Occupancy Rate: ${(event.occupancyRate * 100).toStringAsFixed(0)}%'),
-                pw.Text('Available Seats: ${event.availableSeats}'),
-                pw.SizedBox(height: 20),
-                pw.Text('Sales by Category:', style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold)),
-                ...TicketCategory.values.map((cat) {
-                  final sold = byCategory[cat] ?? 0;
-                  if (sold == 0) return pw.SizedBox.shrink();
-                  return pw.Text('${cat.label}: $sold tickets');
-                }).toList(),
+                pw.Container(
+                  padding: const pw.EdgeInsets.all(20),
+                  decoration: pw.BoxDecoration(
+                    color: PdfColors.deepPurple50,
+                    borderRadius: const pw.BorderRadius.all(pw.Radius.circular(8)),
+                  ),
+                  child: pw.Row(
+                    mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                    children: [
+                      pw.Column(
+                        crossAxisAlignment: pw.CrossAxisAlignment.start,
+                        children: [
+                          pw.Text('EVENTOPIA', style: pw.TextStyle(fontSize: 22, fontWeight: pw.FontWeight.bold, color: PdfColors.deepPurple)),
+                          pw.Text('EVENT ANALYTICS REPORT', style: pw.TextStyle(fontSize: 12, color: PdfColors.deepPurple300)),
+                        ],
+                      ),
+                      pw.Text(DateFormat('dd MMM yyyy').format(DateTime.now()), style: const pw.TextStyle(fontSize: 14, color: PdfColors.grey700)),
+                    ],
+                  ),
+                ),
+                pw.SizedBox(height: 30),
+                
+                pw.Text('Event Details', style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold, color: PdfColors.deepPurple)),
+                pw.SizedBox(height: 10),
+                pw.Text('Name: ${event.title}', style: const pw.TextStyle(fontSize: 14)),
+                pw.Text('Date: ${DateFormat('MMMM dd, yyyy').format(event.date)}', style: const pw.TextStyle(fontSize: 14)),
+                pw.SizedBox(height: 30),
+
+                pw.Text('Key Performance Indicators (KPIs)', style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold, color: PdfColors.deepPurple)),
+                pw.SizedBox(height: 10),
+                pw.TableHelper.fromTextArray(
+                  context: context,
+                  border: null,
+                  headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold, color: PdfColors.white),
+                  headerDecoration: const pw.BoxDecoration(color: PdfColors.deepPurple),
+                  cellHeight: 30,
+                  cellAlignments: {0: pw.Alignment.centerLeft, 1: pw.Alignment.centerRight},
+                  data: [
+                    ['Metric', 'Value'],
+                    ['Tickets Sold', '${event.bookedSeats} / ${event.totalSeats}'],
+                    ['Available Seats', '${event.availableSeats}'],
+                    ['Occupancy Rate', '${(event.occupancyRate * 100).toStringAsFixed(0)}%'],
+                    ['Total Revenue', 'NPR ${totalRevenue.toStringAsFixed(2)}'],
+                  ],
+                ),
+                pw.SizedBox(height: 30),
+
+                pw.Text('Sales by Ticket Category', style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold, color: PdfColors.deepPurple)),
+                pw.SizedBox(height: 10),
+                pw.TableHelper.fromTextArray(
+                  context: context,
+                  border: null,
+                  headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold, color: PdfColors.white),
+                  headerDecoration: const pw.BoxDecoration(color: PdfColors.deepPurple),
+                  cellHeight: 30,
+                  cellAlignments: {0: pw.Alignment.centerLeft, 1: pw.Alignment.centerRight},
+                  data: [
+                    ['Category', 'Tickets Sold'],
+                    ...TicketCategory.values.where((c) => (byCategory[c] ?? 0) > 0).map((cat) {
+                      final sold = byCategory[cat] ?? 0;
+                      return [cat.label, '$sold'];
+                    }).toList(),
+                  ],
+                ),
+
+                pw.Spacer(),
+                pw.Divider(color: PdfColors.grey300),
+                pw.SizedBox(height: 8),
+                pw.Center(
+                  child: pw.Text('Generated by Eventopia System', style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey)),
+                ),
               ],
             );
           },
         ),
       );
 
-      final dir = await getApplicationDocumentsDirectory();
-      final file = File('${dir.path}/report_${event.id}.pdf');
-      await file.writeAsBytes(await pdf.save());
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Report saved to ${file.path}'),
-            action: SnackBarAction(
-              label: 'Share',
-              onPressed: () {
-                Printing.sharePdf(bytes: file.readAsBytesSync(), filename: 'report.pdf');
-              },
-            ),
-          ),
-        );
-      }
+      final bytes = await pdf.save();
+      await Printing.sharePdf(bytes: bytes, filename: 'analytics_${event.id.length >= 8 ? event.id.substring(0, 8) : event.id}.pdf');
+      
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to generate PDF')),
+          SnackBar(content: Text('Failed to generate PDF: $e')),
         );
       }
     }
@@ -107,7 +146,7 @@ class _OrgAnalyticsState extends State<OrgAnalytics> {
     final daily = (data['daily'] as List<DailySales>);
     final byCategory = data['byCategory'] as Map<TicketCategory, int>;
 
-    final totalRevenue = data['totalRevenue'] ?? 0;
+    final totalRevenue = (data['totalRevenue'] as num?)?.toDouble() ?? 0.0;
 
     final maxRevenue = daily.isEmpty
         ? 0.0
@@ -169,7 +208,7 @@ class _OrgAnalyticsState extends State<OrgAnalytics> {
               physics: const NeverScrollableScrollPhysics(),
               crossAxisSpacing: 12,
               mainAxisSpacing: 12,
-              childAspectRatio: 1.3,
+              childAspectRatio: 1.15,
               children: [
                 StatBox(
                   label: 'Tickets Sold',
