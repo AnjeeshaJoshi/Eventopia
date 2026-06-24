@@ -20,6 +20,7 @@ class C {
   static const amber = Color(0xFFF59E0B);  // Warning
   static const teal = Color(0xFF22C55E);   // Success
   static const sky = Color(0xFF60A5FA);
+  static const orange = Color(0xFFF97316);
 
   // Text Colors
   static const t1 = Color(0xFF1F2937);

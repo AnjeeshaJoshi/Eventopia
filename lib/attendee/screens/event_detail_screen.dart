@@ -7,6 +7,7 @@ import '../../models.dart';
 import '../../theme.dart';
 import '../../widgets.dart';
 import '../widgets/booking_sheet.dart';
+import 'seat_layout_screen.dart';
 
 class EventDetailScreen extends StatelessWidget {
   final AppEvent event;
@@ -194,11 +195,11 @@ class EventDetailScreen extends StatelessWidget {
             label: isPast ? 'Event Ended' : (event.status == EventStatus.upcoming ? 'Book Now' : 'Not Available'),
             onTap: canBook
                 ? () {
-                    showModalBottomSheet(
-                      context: context,
-                      isScrollControlled: true,
-                      backgroundColor: Colors.transparent,
-                      builder: (_) => BookingSheet(event: event),
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => SeatLayoutScreen(event: event),
+                      ),
                     );
                   }
                 : null,

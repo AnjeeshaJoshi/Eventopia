@@ -167,7 +167,7 @@ class _PaymentGatewayScreenState extends State<PaymentGatewayScreen> {
                           child: Text(
                             'NPR ${widget.totalAmount.toStringAsFixed(2)}',
                             style: const TextStyle(
-                                fontSize: 18,
+                                fontSize: 15,
                                 fontWeight: FontWeight.bold,
                                 color: C.violet),
                             textAlign: TextAlign.right,

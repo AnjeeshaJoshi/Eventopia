@@ -116,6 +116,23 @@ class TicketType {
   double get occupancy => capacity > 0 ? sold / capacity : 0;
 }
 
+// ── Seat ──────────────────────────────────────────────────────────────────────
+class Seat {
+  final String id;
+  final String row;
+  final int number;
+  final TicketCategory category;
+  bool isBooked;
+
+  Seat({
+    required this.id,
+    required this.row,
+    required this.number,
+    required this.category,
+    this.isBooked = false,
+  });
+}
+
 // ── PromoCode ─────────────────────────────────────────────────────────────────
 class PromoCode {
   final String code;
@@ -147,6 +164,7 @@ class AppEvent {
   final EventStatus status;
   final List<TicketType> ticketTypes;
   final List<PromoCode> promoCodes;
+  final List<Seat> seats;
   final String? posterPath;
 
   AppEvent({
@@ -162,6 +180,7 @@ class AppEvent {
     required this.status,
     required this.ticketTypes,
     this.promoCodes = const [],
+    this.seats = const [],
     this.posterPath,
   });
 
@@ -193,6 +212,7 @@ class Booking {
   final BookingStatus status;
   final DateTime createdAt;
   final String qrData;
+  final List<String> seatIds;
 
   const Booking({
     required this.id,
@@ -208,6 +228,7 @@ class Booking {
     required this.status,
     required this.createdAt,
     required this.qrData,
+    this.seatIds = const [],
   });
 
   double get total => subtotal - discount;

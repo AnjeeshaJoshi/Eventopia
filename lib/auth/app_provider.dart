@@ -104,6 +104,7 @@ class AppProvider extends ChangeNotifier {
       status: EventStatus.pending,
       ticketTypes: ticketTypes,
       promoCodes: promoCodes,
+      seats: _generateSeats(),
       posterPath: posterPath,
     );
     _events.add(event);
@@ -138,6 +139,7 @@ class AppProvider extends ChangeNotifier {
         status: old.status,
         ticketTypes: ticketTypes,
         promoCodes: old.promoCodes,
+        seats: old.seats,
         posterPath: posterPath,
       );
       notifyListeners();
@@ -161,6 +163,7 @@ class AppProvider extends ChangeNotifier {
         status: newStatus,
         ticketTypes: old.ticketTypes,
         promoCodes: old.promoCodes,
+        seats: old.seats,
         posterPath: old.posterPath,
       );
       notifyListeners();
@@ -191,6 +194,7 @@ class AppProvider extends ChangeNotifier {
     required TicketCategory category,
     required int quantity,
     String? promoCode,
+    List<String> seatIds = const [],
   }) {
     final idx = _events.indexWhere((e) => e.id == eventId);
     if (idx < 0) return null;
@@ -220,6 +224,14 @@ class AppProvider extends ChangeNotifier {
 
     type.sold += quantity;
 
+    if (seatIds.isNotEmpty) {
+      for (final s in event.seats) {
+        if (seatIds.contains(s.id)) {
+          s.isBooked = true;
+        }
+      }
+    }
+
     final booking = Booking(
       id: _uuid.v4(),
       eventId: eventId,
@@ -233,7 +245,8 @@ class AppProvider extends ChangeNotifier {
       promoCode: usedPromo,
       status: BookingStatus.confirmed,
       createdAt: DateTime.now(),
-      qrData: 'EMS-${_uuid.v4()}',
+      qrData: 'QR-${_uuid.v4().substring(0, 8)}',
+      seatIds: seatIds,
     );
     _bookings.add(booking);
 
@@ -604,6 +617,44 @@ List<AppUser> _seedUsers() => [
       ),
     ];
 
+List<Seat> _generateSeats() {
+  final List<Seat> seats = [];
+
+  // Lower Foyer - General (Rows A to K)
+  final lowerFoyerRows = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K'];
+  for (var row in lowerFoyerRows) {
+    for (int i = 15; i <= 34; i++) {
+      seats.add(Seat(id: 'GF_$row$i', row: row, number: i, category: TicketCategory.general));
+    }
+  }
+
+  // Left Wing - Senior
+  final leftWingRows = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L'];
+  for (var row in leftWingRows) {
+    for (int i = 35; i <= 49; i++) {
+      seats.add(Seat(id: 'L_$row$i', row: row, number: i, category: TicketCategory.senior));
+    }
+  }
+
+  // Right Wing - Child
+  final rightWingRows = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L'];
+  for (var row in rightWingRows) {
+    for (int i = 1; i <= 14; i++) {
+      seats.add(Seat(id: 'R_$row$i', row: row, number: i, category: TicketCategory.child));
+    }
+  }
+
+  // Balcony - VIP (Rows AA to EE)
+  final balconyRows = ['AA', 'BB', 'CC', 'DD', 'EE'];
+  for (var row in balconyRows) {
+    for (int i = 1; i <= 50; i++) {
+      seats.add(Seat(id: 'B_$row$i', row: row, number: i, category: TicketCategory.vip));
+    }
+  }
+
+  return seats;
+}
+
 List<AppEvent> _seedEvents() {
   final now = DateTime.now();
   return [
@@ -620,6 +671,7 @@ List<AppEvent> _seedEvents() {
       organizerId: 'u-org-1',
       organizerName: 'Binita Dulal',
       status: EventStatus.upcoming,
+      seats: _generateSeats(),
       ticketTypes: [
         TicketType(
             id: _uuid.v4(),
@@ -755,6 +807,7 @@ List<AppEvent> _seedEvents() {
       organizerId: 'u-org-1',
       organizerName: 'Binita Dulal',
       status: EventStatus.upcoming,
+      seats: _generateSeats(),
       ticketTypes: [
         TicketType(
             id: _uuid.v4(),

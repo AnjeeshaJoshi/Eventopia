@@ -13,7 +13,17 @@ import 'booking_confirmed_sheet.dart';
 
 class BookingSheet extends StatefulWidget {
   final AppEvent event;
-  const BookingSheet({required this.event});
+  final TicketCategory? preSelectedCategory;
+  final int? preSelectedQuantity;
+  final List<String> preSelectedSeatIds;
+
+  const BookingSheet({
+    super.key,
+    required this.event,
+    this.preSelectedCategory,
+    this.preSelectedQuantity,
+    this.preSelectedSeatIds = const [],
+  });
   @override
   State<BookingSheet> createState() => _BookingSheetState();
 }
@@ -26,6 +36,15 @@ class _BookingSheetState extends State<BookingSheet> {
   String? _promoError;
   String? _promoSuccess;
   double _discountPct = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _cat = widget.preSelectedCategory;
+    if (widget.preSelectedQuantity != null) {
+      _qty = widget.preSelectedQuantity!;
+    }
+  }
 
   @override
   void dispose() {
@@ -97,6 +116,7 @@ class _BookingSheetState extends State<BookingSheet> {
               quantity: _qty,
               promoCode:
                   _promoCtrl.text.trim().isEmpty ? null : _promoCtrl.text.trim(),
+              seatIds: widget.preSelectedSeatIds,
             );
 
             if (booking == null) {
@@ -177,6 +197,7 @@ class _BookingSheetState extends State<BookingSheet> {
               final selected = _cat == type.category;
               return GestureDetector(
                 onTap: () => setState(() {
+                  if (widget.preSelectedCategory != null) return;
                   _cat = type.category;
                   // Re-validate promo code when category changes
                   if (_promoCtrl.text.trim().isNotEmpty && _discountPct > 0) {
@@ -261,9 +282,11 @@ class _BookingSheetState extends State<BookingSheet> {
                 const Spacer(),
                 QtyButton(
                     icon: Icons.remove_rounded,
-                    onTap: _qty > 1
-                        ? () => setState(() => _qty--)
-                        : null),
+                    onTap: widget.preSelectedQuantity != null
+                        ? null
+                        : _qty > 1
+                            ? () => setState(() => _qty--)
+                            : null),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: Text('$_qty',
@@ -272,9 +295,11 @@ class _BookingSheetState extends State<BookingSheet> {
                 ),
                 QtyButton(
                     icon: Icons.add_rounded,
-                    onTap: _qty < 10
-                        ? () => setState(() => _qty++)
-                        : null),
+                    onTap: widget.preSelectedQuantity != null
+                        ? null
+                        : _qty < 10
+                            ? () => setState(() => _qty++)
+                            : null),
               ],
             ),
 

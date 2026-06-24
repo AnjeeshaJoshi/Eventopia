@@ -276,10 +276,10 @@ class BookingConfirmedSheet extends StatelessWidget {
                   child: GBtn(
                     label: 'Done',
                     onTap: () {
-                      Navigator.pop(context);
-                      Navigator.pushNamed(
+                      Navigator.pushNamedAndRemoveUntil(
                         context,
-                        '/tickets',
+                        '/attendee',
+                        (route) => false,
                       );
                     },
 
