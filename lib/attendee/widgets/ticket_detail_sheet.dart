@@ -241,28 +241,55 @@ class TicketDetailSheet extends StatelessWidget {
 
             const SizedBox(height: 16),
 
-            OutlinedButton.icon(
-              onPressed: () {
-                final cancelled = context
-                    .read<AppProvider>()
-                    .cancelBooking(booking.id);
-                Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                  content: Text(cancelled
-                      ? 'Booking cancelled.'
-                      : 'Cannot cancel — 7-day window has passed.'),
-                ));
-              },
-              icon: const Icon(Icons.cancel_rounded, color: C.rose),
-              label: const Text('Cancel Booking',
-                  style: TextStyle(color: C.rose)),
-              style: OutlinedButton.styleFrom(
-                side: const BorderSide(color: C.rose),
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14)),
+            if (booking.status == BookingStatus.cancelled)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: C.rose.withOpacity(0.08),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: C.rose.withOpacity(0.3)),
+                ),
+                child: const Row(
+                  children: [
+                    Icon(Icons.info_outline_rounded, color: C.rose),
+                    SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        'This booking is cancelled. The refund has been done.',
+                        style: TextStyle(
+                          color: C.rose,
+                          fontWeight: FontWeight.w500,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            else
+              OutlinedButton.icon(
+                onPressed: () {
+                  final cancelled = context
+                      .read<AppProvider>()
+                      .cancelBooking(booking.id);
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                    content: Text(cancelled
+                        ? 'Booking cancelled. The refund has been done.'
+                        : 'Cannot cancel — 7-day window has passed.'),
+                  ));
+                },
+                icon: const Icon(Icons.cancel_rounded, color: C.rose),
+                label: const Text('Cancel Booking',
+                    style: TextStyle(color: C.rose)),
+                style: OutlinedButton.styleFrom(
+                  side: const BorderSide(color: C.rose),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14)),
+                ),
               ),
-            ),
           ],
         ),
       ),

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
-
 import '../models.dart';
 
 const _uuid = Uuid();
@@ -318,7 +317,7 @@ class AppProvider extends ChangeNotifier {
     if (booking.status == BookingStatus.checkedIn) {
       return 'Ticket already checked in';
     } else if (booking.status == BookingStatus.cancelled) {
-      return 'Ticket is cancelled';
+      return 'Ticket is cancelled. The refund has been done.';
     }
 
     _bookings[idx] = Booking(
@@ -710,7 +709,7 @@ List<AppEvent> _seedEvents() {
     AppEvent(
       id: 'evt-2',
       title: 'AI & Innovation Summit',
-      posterPath: 'assets/images/submit',
+      posterPath: 'assets/images/submit.jpg',
       description:
           'Join experts, researchers, and technology enthusiasts for discussions on Artificial Intelligence, emerging technologies, and digital innovation. The summit features keynote speeches, panel discussions, and demonstrations of cutting-edge solutions shaping the future.',
       location: 'Hotel Yak & Yeti',

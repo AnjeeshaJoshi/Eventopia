@@ -195,10 +195,15 @@ class _EditEventSheetState extends State<EditEventSheet> {
                       ? Stack(
                           fit: StackFit.expand,
                           children: [
-                            Image.file(
-                              File(_posterPath!),
-                              fit: BoxFit.cover,
-                            ),
+                            _posterPath!.startsWith('assets/')
+                                ? Image.asset(
+                                    _posterPath ?? 'assets/images/expo.jpg',
+                                    fit: BoxFit.cover,
+                                  )
+                                : Image.file(
+                                    File(_posterPath!),
+                                    fit: BoxFit.cover,
+                                  ),
                             Container(
                               decoration: BoxDecoration(
                                 gradient: LinearGradient(

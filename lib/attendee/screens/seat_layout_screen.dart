@@ -19,28 +19,17 @@ class _SeatLayoutScreenState extends State<SeatLayoutScreen> {
 
   void _toggleSeat(Seat seat) {
     if (seat.isBooked) return;
+    if (seat.category != _selectedCategory) return;
 
     setState(() {
       if (_selectedSeatIds.contains(seat.id)) {
         _selectedSeatIds.remove(seat.id);
-        if (_selectedSeatIds.isEmpty) {
-          _selectedCategory = null;
-        }
       } else {
-        if (_selectedCategory == null) {
-          _selectedCategory = seat.category;
+        if (_selectedSeatIds.length < 10) {
           _selectedSeatIds.add(seat.id);
-        } else if (_selectedCategory == seat.category) {
-          if (_selectedSeatIds.length < 10) {
-            _selectedSeatIds.add(seat.id);
-          } else {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Maximum 10 seats allowed per booking.')),
-            );
-          }
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('You can only select seats from one category at a time.')),
+            const SnackBar(content: Text('Maximum 10 seats allowed per booking.')),
           );
         }
       }
@@ -67,9 +56,57 @@ class _SeatLayoutScreenState extends State<SeatLayoutScreen> {
       ),
       body: Column(
         children: [
-          // Legend
+          // Category Selector
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Choose Ticket Category First',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: C.t1,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: widget.event.ticketTypes.map((t) {
+                      final isSelected = _selectedCategory == t.category;
+                      return Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: ChoiceChip(
+                          label: Text(
+                            '${t.category.label} (NPR ${t.price.toStringAsFixed(0)})',
+                            style: TextStyle(
+                              color: isSelected ? Colors.white : C.t1,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          selected: isSelected,
+                          selectedColor: C.violet,
+                          backgroundColor: C.card,
+                          onSelected: (selected) {
+                            setState(() {
+                              _selectedCategory = t.category;
+                              _selectedSeatIds.clear(); // Clear previously selected seats of another category
+                            });
+                          },
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // Legend
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
             child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: Row(
@@ -80,93 +117,117 @@ class _SeatLayoutScreenState extends State<SeatLayoutScreen> {
                   _buildLegendItem('Selected', C.violet),
                   const SizedBox(width: 16),
                   _buildLegendItem('Booked', Colors.grey.shade300),
-                  const SizedBox(width: 16),
-                  ...TicketCategory.values.map((c) => Padding(
-                    padding: const EdgeInsets.only(right: 16),
-                    child: _buildLegendItem(c.label, c.color),
-                  )),
+                  if (_selectedCategory != null) ...[
+                    const SizedBox(width: 16),
+                    _buildLegendItem(_selectedCategory!.label, _selectedCategory!.color),
+                  ],
                 ],
               ),
             ),
           ),
           
-          Expanded(
-            child: InteractiveViewer(
-              minScale: 0.5,
-              maxScale: 3.0,
-              boundaryMargin: const EdgeInsets.all(100),
+          if (_selectedCategory == null)
+            Expanded(
               child: Center(
-                child: SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.event_seat_rounded,
+                      size: 80,
+                      color: C.violet.withOpacity(0.2),
+                    ),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Please select a ticket category to choose seats',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: C.t2,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            )
+          else
+            Expanded(
+              child: InteractiveViewer(
+                minScale: 0.5,
+                maxScale: 3.0,
+                boundaryMargin: const EdgeInsets.all(100),
+                child: Center(
                   child: SingleChildScrollView(
-                    child: Padding(
-                      padding: const EdgeInsets.all(40),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          // Stage
-                          Container(
-                            width: 300,
-                            height: 40,
-                            alignment: Alignment.center,
-                            decoration: BoxDecoration(
-                              color: C.card,
-                              borderRadius: const BorderRadius.vertical(bottom: Radius.circular(100)),
-                              border: Border.all(color: C.border),
+                    scrollDirection: Axis.horizontal,
+                    child: SingleChildScrollView(
+                      child: Padding(
+                        padding: const EdgeInsets.all(40),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            // Stage
+                            Container(
+                              width: 300,
+                              height: 40,
+                              alignment: Alignment.center,
+                              decoration: BoxDecoration(
+                                color: C.card,
+                                borderRadius: const BorderRadius.vertical(bottom: Radius.circular(100)),
+                                border: Border.all(color: C.border),
+                              ),
+                              child: const Text('STAGE', style: TextStyle(fontWeight: FontWeight.w700, color: C.t2, letterSpacing: 4)),
                             ),
-                            child: const Text('STAGE', style: TextStyle(fontWeight: FontWeight.w700, color: C.t2, letterSpacing: 4)),
-                          ),
-                          const SizedBox(height: 60),
+                            const SizedBox(height: 60),
 
-                          // Main Seating Grid
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              // Left Wing (Senior)
-                              _buildWingSection(TicketCategory.senior, 'L_'),
-                              
-                              const SizedBox(width: 40),
-                              
-                              // Center Lower Foyer (General)
-                              _buildCenterSection(TicketCategory.general, 'GF_'),
+                            // Main Seating Grid
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                // Left Wing (Senior)
+                                if (_selectedCategory == TicketCategory.senior)
+                                  _buildWingSection(TicketCategory.senior, 'L_'),
+                                
+                                const SizedBox(width: 40),
+                                
+                                // Center Lower Foyer (General)
+                                if (_selectedCategory == TicketCategory.general)
+                                  _buildCenterSection(TicketCategory.general, 'GF_'),
 
-                              const SizedBox(width: 40),
+                                const SizedBox(width: 40),
 
-                              // Right Wing (Child)
-                              _buildWingSection(TicketCategory.child, 'R_'),
+                                // Right Wing (Child)
+                                if (_selectedCategory == TicketCategory.child)
+                                  _buildWingSection(TicketCategory.child, 'R_'),
+                              ],
+                            ),
+                            
+                            // Balcony (VIP)
+                            if (_selectedCategory == TicketCategory.vip) ...[
+                              const SizedBox(height: 40),
+                              _buildCenterSection(TicketCategory.vip, 'B_'),
                             ],
-                          ),
-                          
-                          const SizedBox(height: 40),
-                          
-                          // Control room separator
-                          Container(width: 600, height: 2, color: C.border),
-                          const SizedBox(height: 40),
+                            
+                            const SizedBox(height: 40),
 
-                          // Balcony (VIP)
-                          _buildCenterSection(TicketCategory.vip, 'B_'),
-                          
-                          const SizedBox(height: 40),
-
-                          Container(
-                            width: 300,
-                            height: 40,
-                            alignment: Alignment.center,
-                            decoration: BoxDecoration(
-                              color: C.card,
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(color: C.border),
+                            Container(
+                              width: 300,
+                              height: 40,
+                              alignment: Alignment.center,
+                              decoration: BoxDecoration(
+                                color: C.card,
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(color: C.border),
+                              ),
+                              child: const Text('CONTROL ROOM', style: TextStyle(fontWeight: FontWeight.w700, color: C.t2, letterSpacing: 4)),
                             ),
-                            child: const Text('CONTROL ROOM', style: TextStyle(fontWeight: FontWeight.w700, color: C.t2, letterSpacing: 4)),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
                   ),
                 ),
               ),
             ),
-          ),
           
           // Bottom Bar
           Container(

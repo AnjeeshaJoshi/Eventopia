@@ -266,11 +266,17 @@ class EventCard extends StatelessWidget {
               fit: StackFit.expand,
               children: [
                 if (event.posterPath != null)
-                  Image.file(
-                    File(event.posterPath!),
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => _gradientBanner(compact),
-                  )
+                  event.posterPath!.startsWith('assets/')
+                      ? Image.asset(
+                          event.posterPath!,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => _gradientBanner(compact),
+                        )
+                      : Image.file(
+                          File(event.posterPath!),
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => _gradientBanner(compact),
+                        )
                 else
                   _gradientBanner(compact),
                 // Slight dark overlay for chip readability on images

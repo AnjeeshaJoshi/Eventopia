@@ -35,17 +35,29 @@ class EventDetailScreen extends StatelessWidget {
                 children: [
                   // Show poster image if available, else show placeholder
                   if (event.posterPath != null)
-                    Image.file(
-                      File(event.posterPath!),
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => Container(
-                        color: C.violet.withOpacity(0.1),
-                        child: Center(
-                          child: Icon(Icons.event_seat_rounded,
-                              size: 64, color: C.violet.withOpacity(0.2)),
-                        ),
-                      ),
-                    )
+                    event.posterPath!.startsWith('assets/')
+                        ? Image.asset(
+                            event.posterPath!,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => Container(
+                              color: C.violet.withOpacity(0.1),
+                              child: Center(
+                                child: Icon(Icons.event_seat_rounded,
+                                    size: 64, color: C.violet.withOpacity(0.2)),
+                              ),
+                            ),
+                          )
+                        : Image.file(
+                            File(event.posterPath!),
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => Container(
+                              color: C.violet.withOpacity(0.1),
+                              child: Center(
+                                child: Icon(Icons.event_seat_rounded,
+                                    size: 64, color: C.violet.withOpacity(0.2)),
+                              ),
+                            ),
+                          )
                   else
                     Container(
                       color: C.violet.withOpacity(0.1),

@@ -14,27 +14,36 @@ class MyTickets extends StatelessWidget {
     final bookings = p.myBookings;
     
     final upcoming = bookings.where((b) {
+      if (b.status == BookingStatus.cancelled) return false;
       final e = p.events.firstWhere((ev) => ev.id == b.eventId);
       return e.status == EventStatus.upcoming;
     }).toList();
     
     final past = bookings.where((b) {
+      if (b.status == BookingStatus.cancelled) return false;
       final e = p.events.firstWhere((ev) => ev.id == b.eventId);
       return e.status != EventStatus.upcoming;
     }).toList();
 
+    final cancelled = bookings.where((b) {
+      return b.status == BookingStatus.cancelled;
+    }).toList();
+
+
     return DefaultTabController(
-      length: 2,
+      length: 3,
       child: Scaffold(
         appBar: AppBar(
           title: const Text('My Tickets'),
           bottom: const TabBar(
+
             indicatorColor: C.violet,
             labelColor: C.violet,
             unselectedLabelColor: C.t3,
             tabs: [
               Tab(text: 'Upcoming'),
               Tab(text: 'Past'),
+              Tab(text: 'Cancelled'),
             ],
           ),
         ),
@@ -42,6 +51,7 @@ class MyTickets extends StatelessWidget {
           children: [
             _buildList(upcoming),
             _buildList(past),
+            _buildList(cancelled),
           ],
         ),
       ),
