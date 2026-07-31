@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:ems_app/l10n/app_localizations.dart';
 import '../../models.dart';
 import '../../theme.dart';
 import '../../widgets.dart';
 import '../widgets/booking_sheet.dart';
 
 class SeatLayoutScreen extends StatefulWidget {
-  final AppEvent event;
+  final EventModel event;
 
   const SeatLayoutScreen({super.key, required this.event});
 
@@ -28,8 +29,9 @@ class _SeatLayoutScreenState extends State<SeatLayoutScreen> {
         if (_selectedSeatIds.length < 10) {
           _selectedSeatIds.add(seat.id);
         } else {
+          final l = AppLocalizations.of(context)!;
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Maximum 10 seats allowed per booking.')),
+            SnackBar(content: Text(l.maxSeatsAllowed)),
           );
         }
       }
@@ -48,6 +50,8 @@ class _SeatLayoutScreenState extends State<SeatLayoutScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
+
     return Scaffold(
       backgroundColor: C.bg,
       appBar: AppBar(
@@ -62,9 +66,9 @@ class _SeatLayoutScreenState extends State<SeatLayoutScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Choose Ticket Category First',
-                  style: TextStyle(
+                Text(
+                  l.chooseTicketCategoryFirst,
+                  style: const TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
                     color: C.t1,
@@ -74,7 +78,9 @@ class _SeatLayoutScreenState extends State<SeatLayoutScreen> {
                 SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
                   child: Row(
-                    children: widget.event.ticketTypes.map((t) {
+                    children: widget.event.ticketTypes
+                        .where((ticket) => ticket.capacity > 0 && ticket.available)
+                        .map((t) {
                       final isSelected = _selectedCategory == t.category;
                       return Padding(
                         padding: const EdgeInsets.only(right: 8),
@@ -112,11 +118,14 @@ class _SeatLayoutScreenState extends State<SeatLayoutScreen> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  _buildLegendItem('Available', C.border),
+                  _buildLegendItem(
+                    l.available,
+                    _selectedCategory?.color ?? C.violet,
+                  ),
                   const SizedBox(width: 16),
-                  _buildLegendItem('Selected', C.violet),
+                  _buildLegendItem(l.selected, C.violet),
                   const SizedBox(width: 16),
-                  _buildLegendItem('Booked', Colors.grey.shade300),
+                  _buildLegendItem(l.booked, Colors.grey.shade300),
                   if (_selectedCategory != null) ...[
                     const SizedBox(width: 16),
                     _buildLegendItem(_selectedCategory!.label, _selectedCategory!.color),
@@ -138,9 +147,9 @@ class _SeatLayoutScreenState extends State<SeatLayoutScreen> {
                       color: C.violet.withOpacity(0.2),
                     ),
                     const SizedBox(height: 16),
-                    const Text(
-                      'Please select a ticket category to choose seats',
-                      style: TextStyle(
+                    Text(
+                      l.pleaseSelectCategory,
+                      style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
                         color: C.t2,
@@ -175,7 +184,7 @@ class _SeatLayoutScreenState extends State<SeatLayoutScreen> {
                                 borderRadius: const BorderRadius.vertical(bottom: Radius.circular(100)),
                                 border: Border.all(color: C.border),
                               ),
-                              child: const Text('STAGE', style: TextStyle(fontWeight: FontWeight.w700, color: C.t2, letterSpacing: 4)),
+                              child: Text(l.stageUpper.toUpperCase(), style: const TextStyle(fontWeight: FontWeight.w700, color: C.t2, letterSpacing: 4)),
                             ),
                             const SizedBox(height: 60),
 
@@ -218,7 +227,7 @@ class _SeatLayoutScreenState extends State<SeatLayoutScreen> {
                                 borderRadius: BorderRadius.circular(8),
                                 border: Border.all(color: C.border),
                               ),
-                              child: const Text('CONTROL ROOM', style: TextStyle(fontWeight: FontWeight.w700, color: C.t2, letterSpacing: 4)),
+                              child: Text(l.controlRoomUpper.toUpperCase(), style: const TextStyle(fontWeight: FontWeight.w700, color: C.t2, letterSpacing: 4)),
                             ),
                           ],
                         ),
@@ -245,7 +254,7 @@ class _SeatLayoutScreenState extends State<SeatLayoutScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      '${_selectedSeatIds.length} seat(s) selected',
+                      l.seatsSelected(_selectedSeatIds.length.toString()),
                       style: const TextStyle(fontSize: 14, color: C.t2),
                     ),
                     const SizedBox(height: 4),
@@ -256,7 +265,7 @@ class _SeatLayoutScreenState extends State<SeatLayoutScreen> {
                   ],
                 ),
                 GBtn(
-                  label: 'Continue',
+                  label: l.continueAction,
                   width: 140,
                   onTap: _selectedSeatIds.isEmpty
                       ? null
@@ -375,9 +384,11 @@ class _SeatLayoutScreenState extends State<SeatLayoutScreen> {
         height: 16,
         margin: const EdgeInsets.symmetric(horizontal: 2),
         decoration: BoxDecoration(
-          color: isSelected 
-              ? C.violet 
-              : (seat.isBooked ? Colors.grey.shade300 : baseColor.withOpacity(0.15)),
+          color: isSelected
+              ? C.violet
+              : (seat.isBooked
+                  ? Colors.grey.shade300
+                  : baseColor.withOpacity(0.32)),
           border: Border.all(
             color: isSelected 
                 ? C.violet 

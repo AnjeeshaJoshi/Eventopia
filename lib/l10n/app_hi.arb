@@ -1,0 +1,682 @@
+{
+  "@@locale": "hi",
+  "whatsPoppin": "What's Poppin' at HELP?",
+  "soldOut": "बिक चुका है",
+  "full": "पूर्ण",
+  "seatsLeft": "{seats} left",
+  "@seatsLeft": {
+    "description": "Text for seatsLeft",
+    "placeholders": {
+      "seats": {
+        "type": "String",
+        "example": "seats"
+      }
+    }
+  },
+  "fromNpr": "From NPR {price}",
+  "@fromNpr": {
+    "description": "Text for fromNpr",
+    "placeholders": {
+      "price": {
+        "type": "String",
+        "example": "price"
+      }
+    }
+  },
+  "admin": "प्रशासक",
+  "organizer": "आयोजक",
+  "attendee": "प्रतिभागी",
+  "weak": "कमज़ोर",
+  "fair": "ठीक",
+  "good": "अच्छा",
+  "strong": "मज़बूत",
+  "passwordStrength": "पासवर्ड की मजबूती: {label}",
+  "@passwordStrength": {
+    "description": "Text for passwordStrength",
+    "placeholders": {
+      "label": {
+        "type": "String",
+        "example": "label"
+      }
+    }
+  },
+  "changeDefaultPasswordPrompt": "जारी रखने के लिए कृपया अपना डिफ़ॉल्ट पासवर्ड बदलें।",
+  "appTitle": "Eventopia",
+  "welcomeBack": "वापसी पर स्वागत है!",
+  "back": "वापस",
+  "toggleVisibility":"Show/Hide Password",
+  "loginToContinue": "जारी रखने के लिए लॉग इन करें",
+  "emailAddress": "ईमेल पता",
+  "emailIsRequired": "ईमेल आवश्यक है",
+  "password": "पासवर्ड",
+  "passwordIsRequired": "पासवर्ड ज़रूरी है",
+  "forgotPassword": "पासवर्ड भूल गए?",
+  "logIn": "लॉग इन",
+  "dontHaveAccount": "क्या आपका अकाउंट नहीं है? ",
+  "createAccountTitle": "अकाउंट बनाएं",
+  "joinEventopia": "इवेंटोपिया से जुड़ें",
+  "registeringAs": "रजिस्टर करें:",
+  "fullName": "पूरा नाम",
+  "fullNameIsRequired": "पूरा नाम आवश्यक है",
+  "nameIsTooShort": "नाम बहुत छोटा है",
+  "enterValidEmail": "मान्य ईमेल पता दर्ज करें",
+  "phoneNumber": "फ़ोन नंबर",
+  "phoneIsRequired": "फ़ोन नंबर आवश्यक है",
+  "enterValidPhone": "मान्य फ़ोन नंबर दर्ज करें",
+  "minimumSixChars": "कम से कम छह अक्षर",
+  "confirmPassword": "पासवर्ड की पुष्टि करें",
+  "pleaseConfirmPassword": "कृपया पासवर्ड की पुष्टि करें",
+  "passwordsDoNotMatch": "पासवर्ड मेल नहीं खाते",
+  "alreadyHaveAccount": "पहले से अकाउंट है?",
+  "signIn": "साइन इन",
+  "home": "होम",
+  "users": "उपयोगकर्ता",
+  "events": "कार्यक्रम",
+  "profile": "प्रोफ़ाइल",
+  "eventRequests": "कार्यक्रम अनुरोध",
+  "noPendingRequests": "कोई लंबित अनुरोध नहीं है",
+  "byOrganizer": "By {organizer}",
+  "@byOrganizer": {
+    "description": "Text for byOrganizer",
+    "placeholders": {
+      "organizer": {
+        "type": "String",
+        "example": "organizer"
+      }
+    }
+  },
+  "eventRejected": "इवेंट अस्वीकार कर दिया गया",
+  "reject": "अस्वीकार",
+  "eventApproved": "इवेंट मंज़ूर हो गया",
+  "approve": "मंज़ूरी",
+  "noUserLoggedIn": "कोई भी यूज़र लॉग इन नहीं है",
+  "administrator": "प्रशासक",
+  "organisers": "आयोजक",
+  "attendees": "प्रतिभागी",
+  "revenue": "राजस्व",
+  "nprRevenue": "NPR {revenue}",
+  "@nprRevenue": {
+    "description": "Text for nprRevenue",
+    "placeholders": {
+      "revenue": {
+        "type": "String",
+        "example": "revenue"
+      }
+    }
+  },
+  "quickActions": "त्वरित कार्य",
+  "addOrganiser": "आयोजक\nजोड़ें",
+  "eventRequestsQuickAction": "Event\nRequests",
+  "reports": "रिपोर्ट",
+  "allEvents": "सभी कार्यक्रम",
+  "seeAll": "सभी देखें",
+  "auditoriumOccupancy": "ऑडिटोरियम में लोगों की संख्या",
+  "seatsBooked": "{booked} / {total} seats booked",
+  "@seatsBooked": {
+    "description": "Text for seatsBooked",
+    "placeholders": {
+      "booked": {
+        "type": "String",
+        "example": "booked"
+      },
+      "total": {
+        "type": "String",
+        "example": "total"
+      }
+    }
+  },
+  "myProfile": "मेरी प्रोफ़ाइल",
+  "editProfile": "प्रोफ़ाइल संपादित करें",
+  "name": "नाम",
+  "phone": "फ़ोन",
+  "cancel": "रद्द करें",
+  "pleaseFillAllFields": "कृपया सभी क्षेत्रों को भरें",
+  "profileUpdatedSuccessfully": "प्रोफ़ाइल सफलतापूर्वक अपडेट हो गई है।",
+  "save": "सहेजें",
+  "email": "ईमेल",
+  "resetPassword": "पासवर्ड रीसेट करें",
+  "newPassword": "नया पासवर्ड",
+  "passwordChangedSuccessfully": "पासवर्ड सफलतापूर्वक बदल दिया गया",
+  "update": "अपडेट करें",
+  "signOut": "साइन आउट",
+  "eventopiaAnalytics": "इवेंटोपिया एनालिटिक्स",
+  "report": "प्रतिवेदन",
+  "eventDetails": "इवेंट की जानकारी",
+  "nameDetail": "Name: {name}",
+  "@nameDetail": {
+    "description": "Text for nameDetail",
+    "placeholders": {
+      "name": {
+        "type": "String",
+        "example": "name"
+      }
+    }
+  },
+  "dateDetail": "Date: {date}",
+  "@dateDetail": {
+    "description": "Text for dateDetail",
+    "placeholders": {
+      "date": {
+        "type": "String",
+        "example": "date"
+      }
+    }
+  },
+  "organizerDetail": "Organizer: {organizer}",
+  "@organizerDetail": {
+    "description": "Text for organizerDetail",
+    "placeholders": {
+      "organizer": {
+        "type": "String",
+        "example": "organizer"
+      }
+    }
+  },
+  "locationDetail": "Location: {location}",
+  "@locationDetail": {
+    "description": "Text for locationDetail",
+    "placeholders": {
+      "location": {
+        "type": "String",
+        "example": "location"
+      }
+    }
+  },
+  "kpi": "Key Performance Indicators",
+  "metric": "Metric",
+  "value": "Value",
+  "totalTicketsSold": "Total Tickets Sold",
+  "totalRevenue": "Total Revenue",
+  "occupancyRate": "Occupancy Rate",
+  "occupancyProgress": "{title} occupancy {percent}%",
+  "@occupancyProgress": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      },
+      "percent": {
+        "type": "String"
+      }
+    }
+  },
+  "availableSeats": "उपलब्ध सीट",
+  "salesByTicketCategory": "टिकट कैटेगरी के अनुसार बिक्री",
+  "category": "कैटेगरी",
+  "ticketsSold": "टिकट बिके",
+  "generatedOnBySystem": "{date} को Eventopia सिस्टम द्वारा जनरेट किया गया",
+  "@generatedOnBySystem": {
+    "description": "Text for generatedOnBySystem",
+    "placeholders": {
+      "date": {
+        "type": "String",
+        "example": "date"
+      }
+    }
+  },
+  "failedToGeneratePdf": "PDF बनाने में समस्या हुई: {error}",
+  "@failedToGeneratePdf": {
+    "description": "Text for failedToGeneratePdf",
+    "placeholders": {
+      "error": {
+        "type": "String",
+        "example": "error"
+      }
+    }
+  },
+  "reportsAndAnalytics": "रिपोर्ट और एनालिटिक्स",
+  "noEventsToShowAnalytics": "एनालिटिक्स दिखाने के लिए कोई इवेंट उपलब्ध नहीं है।",
+  "selectEvent": "इवेंट चुनें",
+  "ofTotal": "of {total} total",
+  "@ofTotal": {
+    "description": "Text for ofTotal",
+    "placeholders": {
+      "total": {
+        "type": "String",
+        "example": "total"
+      }
+    }
+  },
+  "occupancy": "अधिभोग",
+  "available": "उपलब्ध",
+  "sevenDayRevenue": "7-दिन का रेवेन्यू",
+  "salesByCategory": "कैटेगरी के अनुसार बिक्री",
+  "passwordChangedPleaseLogin": "पासवर्ड सफलतापूर्वक बदल दिया गया है। कृपया लॉग इन करें।",
+  "changePassword": "पासवर्ड बदलें",
+  "enterNewPasswordDesc": "अपने अकाउंट को सुरक्षित करने के लिए नीचे एक नया पासवर्ड डालें।",
+  "entryApprovedFor": "Entry approved for \"{title}\"",
+  "@entryApprovedFor": {
+    "description": "Text for entryApprovedFor",
+    "placeholders": {
+      "title": {
+        "type": "String",
+        "example": "title"
+      }
+    }
+  },
+  "qrCodeNotFound": "QR कोड नहीं मिला या पहले ही इस्तेमाल हो चुका है।",
+  "qrCheckIn": "QR चेक-इन",
+  "scanQrAtGate": "एंट्री गेट पर QR स्कैन करें",
+  "manualQrCodeEntry": "मैन्युअल QR कोड एंट्री",
+  "enterQrCode": "QR कोड डालें",
+  "validateEntry": "एंट्री को मान्य करें",
+  "noEventsAvailable": "कोई इवेंट उपलब्ध नहीं है",
+  "all": "सभी",
+  "deleteUser": "उपयोगकर्ता को हटाएँ",
+  "areYouSureDeleteUser": "क्या आप आश्वस्त है कि आपको {name} डिलीट करना है?",
+  "@areYouSureDeleteUser": {
+    "description": "Text for areYouSureDeleteUser",
+    "placeholders": {
+      "name": {
+        "type": "String",
+        "example": "name"
+      }
+    }
+  },
+  "delete": "हटाएँ",
+  "editUser": "उपयोगकर्ता संपादित करें",
+  "organisation": "Organisation",
+  "manageEvent": "कार्यक्रम प्रबंधित करें",
+  "changeStatus": "स्थिति बदलें",
+  "deleteEvent": "कार्यक्रम हटाएँ",
+  "areYouSureDeleteEvent": "क्या आप इस कार्यक्रम को हटाना चाहते हैं? यह कार्रवाई वापस नहीं की जा सकती।",
+  "eventRequestCard": "Event request card",
+  "saveChanges": "परिवर्तन सहेजें",
+  "scanAttendeeQr": "QR स्कैन करें",
+  "cameraOpensHere": "कैमरा यहाँ खुलता है",
+  "mobileScannerPlugin": "(mobile_scanner plugin)",
+  "close": "बंद करें",
+  "organiserRegistered": "आयोजक पंजीकृत!",
+  "organiserLoginCredentialsAssigned": "ऑर्गनाइज़र को लॉगिन क्रेडेंशियल दे दिए गए हैं। वे डिफ़ॉल्ट पासवर्ड (Org@1234) का इस्तेमाल कर सकते हैं और पहली बार लॉगिन करने पर इसे बदल सकते हैं।",
+  "done": "पूरा करें",
+  "registerNewOrganiser": "नया ऑर्गनाइज़र रजिस्टर करें",
+  "defaultPasswordAssignedDesc": "एक डिफ़ॉल्ट पासवर्ड (Org@1234) तय किया जाएगा और ऑर्गनाइज़र को ईमेल किया जाएगा। उन्हें पहली बार लॉग इन करने पर इसे बदलना होगा।",
+  "required": "ज़रूरी",
+  "invalidEmail": "अमान्य ईमेल",
+  "organisationNameOptional": "संगठन का नाम (वैकल्पिक)",
+  "registerOrganiser": "रजिस्टर करें",
+  "myEvents": "मेरे कार्यक्रम",
+  "analytics": "विश्लेषण",
+  "organiser": "ऑर्गनाइज़र",
+  "nprParam": "NPR {param}",
+  "@nprParam": {
+    "description": "Text for nprParam",
+    "placeholders": {
+      "param": {
+        "type": "String",
+        "example": "param"
+      }
+    }
+  },
+  "promoCodes": "प्रोमो कोड",
+  "createAction": "+ इवेंट बनाएँ",
+  "noEventsYet": "अभी कोई कार्यक्रम नहीं है।",
+  "tapCreateToAddFirstEvent": "अपना पहला इवेंट जोड़ने के लिए '+ इवेंट बनाएँ' पर टैप करें।",
+  "create": "बनाएँ",
+  "eventAnalyticsReport": "इवेंट एनालिटिक्स रिपोर्ट",
+  "nameParam": "Name: {param}",
+  "@nameParam": {
+    "description": "Text for nameParam",
+    "placeholders": {
+      "param": {
+        "type": "String",
+        "example": "param"
+      }
+    }
+  },
+  "dateParam": "Date: {param}",
+  "@dateParam": {
+    "description": "Text for dateParam",
+    "placeholders": {
+      "param": {
+        "type": "String",
+        "example": "param"
+      }
+    }
+  },
+  "kpis": "Key Performance Indicators (KPIs)",
+  "generatedBySystem": "Generated by Eventopia System",
+  "createEventsToSeeAnalytics": "एनालिटिक्स देखने के लिए इवेंट बनाएं।",
+  "downloadPdfReport": "PDF रिपोर्ट डाउनलोड करें",
+  "ofParamTotal": "of {param} total",
+  "@ofParamTotal": {
+    "description": "Text for ofParamTotal",
+    "placeholders": {
+      "param": {
+        "type": "String",
+        "example": "param"
+      }
+    }
+  },
+  "ticketVerified": "टिकट वेरिफ़ाई हो गया",
+  "scanFailed": "स्कैन विफल रहा",
+  "ok": "ठीक है",
+  "scanTicket": "टिकट स्कैन करें",
+  "requiredField": "आवश्यक",
+  "eventAddedSuccessfully": "इवेंट सफलतापूर्वक जोड़ दिया गया!",
+  "createNewEvent": "नया इवेंट बनाएँ",
+  "eventPoster": "इवेंट पोस्टर",
+  "change": "परिवर्तन",
+  "remove": "निकालना",
+  "tapToAddEventPoster": "इवेंट पोस्टर जोड़ने के लिए टैप करें",
+  "recommendedPosterSize": "अनुशंसित: 1200 × 800 px",
+  "eventTitle": "कार्यक्रम शीर्षक",
+  "description": "विवरण",
+  "location": "स्थान",
+  "date": "तारीख",
+  "start": "शुरू",
+  "end": "खत्म",
+  "ticketCategories": "टिकट श्रेणियाँ",
+  "priceNpr": "कीमत (NPR)",
+  "capacity": "क्षमता",
+  "promoCodeOptional": "प्रोमो कोड (वैकल्पिक)",
+  "codeExample": "Code (e.g. SAVE20)",
+  "discountPercentage": "Discount %",
+  "createEvent": "इवेंट बनाएँ",
+  "minParam": "Min {param}",
+  "@minParam": {
+    "description": "Text for minParam",
+    "placeholders": {
+      "param": {
+        "type": "String",
+        "example": "param"
+      }
+    }
+  },
+  "editEvent": "इवेंट संपादित करें",
+  "time": "समय",
+  "seats": "सीटें",
+  "ticketTypes": "टिकट प्रकार",
+  "paramOff": "{param}% off",
+  "@paramOff": {
+    "description": "Text for paramOff",
+    "placeholders": {
+      "param": {
+        "type": "String",
+        "example": "param"
+      }
+    }
+  },
+  "explore": "खोजें",
+  "tickets": "टिकट",
+  "discoverConnectCelebrate": "जानें। जुड़ें। जश्न मनाएं।",
+  "myBookings": "मेरी बुकिंग",
+  "totalSpent": "कुल खर्च",
+  "nprAmount": "NPR {amount}",
+  "@nprAmount": {
+    "description": "Text for nprAmount",
+    "placeholders": {
+      "amount": {
+        "type": "String",
+        "example": "amount"
+      }
+    }
+  },
+  "upcomingEvents": "आगामी कार्यक्रम",
+  "noUpcomingEvents": "कोई आगामी कार्यक्रम नहीं है।",
+  "bookings": "बुकिंग",
+  "exploreEvents": "इवेंट्स खोजें",
+  "searchEvents": "कार्यक्रम खोजें…",
+  "noEventsMatchSearch": "आपकी खोज से मेल खाने वाला कोई इवेंट नहीं है।",
+  "eventUpper": "इवेंट",
+  "completedUpper": "पूरा",
+  "upcomingUpper": "आगामी",
+  "about": "इवेंट के बारे में",
+  "availablePromoCodes": "उपलब्ध प्रोमो कोड",
+  "useCodeForDiscount": "{discount}% की छूट के लिए {code} कोड का इस्तेमाल करें।",
+  "@useCodeForDiscount": {
+    "description": "Text for useCodeForDiscount",
+    "placeholders": {
+      "code": {
+        "type": "String",
+        "example": "code"
+      },
+      "discount": {
+        "type": "String",
+        "example": "discount"
+      }
+    }
+  },
+  "remainingCount": "{count} remaining",
+  "@remainingCount": {
+    "description": "Text for remainingCount",
+    "placeholders": {
+      "count": {
+        "type": "String",
+        "example": "count"
+      }
+    }
+  },
+  "eventEnded": "इवेंट समाप्त",
+  "bookNow": "अभी बुक करें",
+  "notAvailable": "उपलब्ध नहीं",
+  "myTickets": "मेरे टिकट",
+  "upcoming": "आगामी",
+  "past": "पिछले",
+  "cancelled": "रद्द",
+  "noTicketsYet": "अभी तक कोई टिकट नहीं।",
+  "notifications": "सूचनाएँ",
+  "noNotificationsYet": "अभी कोई सूचना नहीं है",
+  "payment": "भुगतान",
+  "orderSummary": "ऑर्डर सारांश",
+  "event": "कार्यक्रम",
+  "ticket": "टिकट",
+  "categoryQuantity": "{category} × {quantity}",
+  "@categoryQuantity": {
+    "description": "Text for categoryQuantity",
+    "placeholders": {
+      "category": {
+        "type": "String",
+        "example": "category"
+      },
+      "quantity": {
+        "type": "String",
+        "example": "quantity"
+      }
+    }
+  },
+  "subtotal": "उप-योग",
+  "promoCode": "Promo: {code}",
+  "@promoCode": {
+    "description": "Text for promoCode",
+    "placeholders": {
+      "code": {
+        "type": "String",
+        "example": "code"
+      }
+    }
+  },
+  "negativeNprAmount": "- NPR {amount}",
+  "@negativeNprAmount": {
+    "description": "Text for negativeNprAmount",
+    "placeholders": {
+      "amount": {
+        "type": "String",
+        "example": "amount"
+      }
+    }
+  },
+  "totalToPay": "कुल भुगतान",
+  "selectPaymentMethod": "भुगतान का तरीका चुनें",
+  "card": "कार्ड",
+  "esewa": "ई-सेवा",
+  "pay": "भुगतान करें",
+  "verifyAndPay": "सत्यापित और भुगतान करें – NPR {amount}",
+  "@verifyAndPay": {
+    "description": "Text for verifyAndPay",
+    "placeholders": {
+      "amount": {
+        "type": "String",
+        "example": "amount"
+      }
+    }
+  },
+  "maxSeatsAllowed": "हर बुकिंग पर ज़्यादा से ज़्यादा 10 सीटें बुक की जा सकती हैं।",
+  "chooseTicketCategoryFirst": "सबसे पहले टिकट कैटेगरी चुनें",
+  "categoryPrice": "{category} (NPR {price})",
+  "@categoryPrice": {
+    "description": "Text for categoryPrice",
+    "placeholders": {
+      "category": {
+        "type": "String",
+        "example": "category"
+      },
+      "price": {
+        "type": "String",
+        "example": "price"
+      }
+    }
+  },
+  "selected": "चयनित",
+  "booked": "बुक हो चुका",
+  "pleaseSelectCategory": "सीटें चुनने के लिए कृपया टिकट की श्रेणी चुनें",
+  "stageUpper": "STAGE",
+  "controlRoomUpper": "CONTROL ROOM",
+  "seatsSelected": "{count} सीट चुनी गईं",
+  "@seatsSelected": {
+    "description": "Text for seatsSelected",
+    "placeholders": {
+      "count": {
+        "type": "String",
+        "example": "count"
+      }
+    }
+  },
+  "continueAction": "जारी",
+  "eventopiaUpper": "EVENTOPIA",
+  "eTicketUpper": "E-TICKET",
+  "confirmedUpper": "CONFIRMED",
+  "detail": "Detail",
+  "info": "Info",
+  "ticketType": "टिकटको प्रकार",
+  "quantity": "मात्रा",
+  "section": "खण्ड",
+  "discount": "छुट",
+  "totalPaid": "कुल भुक्तानी",
+  "bookedOn": "बुक गरिएको",
+  "reference": "सन्दर्भ",
+  "scanQrAtEntry": "एंट्री पर यह QR स्कैन करें।",
+  "generatedBy": "Eventopia द्वारा {date} को जनरेट किया गया",
+  "@generatedBy": {
+    "description": "Text for generatedBy",
+    "placeholders": {
+      "date": {
+        "type": "String",
+        "example": "date"
+      }
+    }
+  },
+  "vip": "वीआईपी",
+  "generalAdmission": "सामान्य प्रवेश",
+  "seniorCitizen": "वरिष्ठ नागरिक",
+  "child": "बच्चा",
+  "ticketConfirmed": "टिकट की पुष्टि हो गई!",
+  "showQrAtEntry": "एंट्री पर यह QR कोड दिखाएं।",
+  "promoApplied": "कोड लागू हो गया {discount}% डिस्काउंट",
+  "@promoApplied": {
+    "description": "Text for promoApplied",
+    "placeholders": {
+      "discount": {
+        "type": "String",
+        "example": "discount"
+      }
+    }
+  },
+  "invalidPromoCode": "अमान्य या एक्सपायर हो चुका कोड",
+  "bookingFailed": "बुकिंग फ़ेल हो गई। कृपया दोबारा कोशिश करें।",
+  "selectTicketType": "टिकट का प्रकार चुनें",
+  "countLeft": "{count} left",
+  "@countLeft": {
+    "description": "Text for countLeft",
+    "placeholders": {
+      "count": {
+        "type": "String",
+        "example": "count"
+      }
+    }
+  },
+  "apply": "लागू",
+  "discountWithPercent": "Discount ({discount}%)",
+  "@discountWithPercent": {
+    "description": "Text for discountWithPercent",
+    "placeholders": {
+      "discount": {
+        "type": "String",
+        "example": "discount"
+      }
+    }
+  },
+  "total": "कुल",
+  "selectATicketType": "टिकट का प्रकार चुने",
+  "proceedToPay": "भुगतान करें",
+  "enterPin": "पिन दर्ज करें",
+  "eventSoldOut": "इस इवेंट के सभी टिकट बिक चुके हैं।",
+  "onWaitlist": "आप प्रतीक्षा सूची में हैं!",
+  "joinWaitlistDesc": "वेटलिस्ट में शामिल हों — टिकट उपलब्ध होने पर हम आपको सूचित करेंगे।",
+  "joinWaitlist": "प्रतीक्षा सूची में जुड़ें",
+  "quantityMultiplier": "× {quantity}",
+  "@quantityMultiplier": {
+    "description": "Text for quantityMultiplier",
+    "placeholders": {
+      "quantity": {
+        "type": "String",
+        "example": "quantity"
+      }
+    }
+  },
+  "downloadTicket": "टिकट डाउनलोड करें",
+  "bookingCancelledRefunded": "यह बुकिंग रद्द कर दी गई है। रिफंड कर दिया गया है।",
+  "bookingCancelledRefundedSuccess": "बुकिंग रद्द कर दी गई है। रिफंड कर दिया गया है।",
+  "cannotCancelWindowPassed": "बुकिंग रद्द कर दी गई है। रिफंड कर दिया गया है।",
+  "cancelBooking": "बुकिंग रद्द",
+
+  "ofTotalSeats": "कुल {total} सीटों में से",
+  "@ofTotalSeats": {
+    "description": "Text for ofTotalSeats",
+    "placeholders": {
+      "total": {
+        "type": "String",
+        "example": "200"
+      }
+    }
+  },
+  "categorySalesProgress": "{category}: {sold} tickets sold",
+  "@categorySalesProgress": {
+    "description": "एक्सेसिबिलिटी लेबल सेल्स प्रोग्रेस के लिए",
+    "placeholders": {
+      "category": {
+        "type": "String",
+        "example": "VIP"
+      },
+      "sold": {
+        "type": "String",
+        "example": "25"
+      }
+    }
+  },
+  "newBooking": "नई बुकिंग",
+  "newBookingMessage": "{attendee} • {quantity} टिकट • {eventTitle}",
+  "@newBookingMessage": {
+    "placeholders": {
+      "attendee": { "type": "String" },
+      "quantity": { "type": "int" },
+      "eventTitle": { "type": "String" }
+    }
+  },
+  "ticketsAvailable": "टिकट उपलब्ध हैं",
+  "waitlistPosition": "स्थान {position}",
+  "@waitlistPosition": {
+    "placeholders": { "position": { "type": "String" } }
+  },
+  "eventStatusUpdated": "इवेंट की स्थिति अपडेट की गई",
+  "eventApprovedByAdmin": "आपका इवेंट \"{eventTitle}\" एडमिन द्वारा मंज़ूर कर दिया गया है।",
+  "@eventApprovedByAdmin": {
+    "placeholders": { "eventTitle": { "type": "String" } }
+  },
+  "eventStatusChanged": "आपके इवेंट \"{eventTitle}\" की स्थिति अब {status} है।",
+  "@eventStatusChanged": {
+    "placeholders": {
+      "eventTitle": { "type": "String" },
+      "status": { "type": "String" }
+    }
+  }
+}

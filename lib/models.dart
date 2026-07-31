@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
-// ── Enums ────────────────────────────────────────────────────────────────────
+export 'models/user_model.dart';
+export 'models/event_model.dart';
+export 'models/booking_model.dart';
+
 enum UserRole { admin, organizer, attendee }
 
 enum EventStatus { planned, pending, upcoming, ongoing, completed, cancelled, postponed }
@@ -9,7 +13,7 @@ enum TicketCategory { vip, general, senior, child }
 
 enum BookingStatus { confirmed, cancelled, checkedIn, waitlisted }
 
-// ── Extensions ───────────────────────────────────────────────────────────────
+
 extension TicketCategoryX on TicketCategory {
   String get label {
     switch (this) {
@@ -74,28 +78,7 @@ extension EventStatusX on EventStatus {
   }
 }
 
-// ── User ─────────────────────────────────────────────────────────────────────
-class AppUser {
-  final String id;
-  final String name;
-  final String email;
-  final String phone;
-  final UserRole role;
-  final String? organization;
-  final bool mustChangePassword;
 
-  const AppUser({
-    required this.id,
-    required this.name,
-    required this.email,
-    required this.phone,
-    required this.role,
-    this.organization,
-    this.mustChangePassword = false,
-  });
-}
-
-// ── TicketType ────────────────────────────────────────────────────────────────
 class TicketType {
   final String id;
   final TicketCategory category;
@@ -114,9 +97,46 @@ class TicketType {
   int get remaining => capacity - sold;
   bool get available => remaining > 0;
   double get occupancy => capacity > 0 ? sold / capacity : 0;
+
+  TicketType copyWith({
+    String? id,
+    TicketCategory? category,
+    double? price,
+    int? capacity,
+    int? sold,
+  }) {
+    return TicketType(
+      id: id ?? this.id,
+      category: category ?? this.category,
+      price: price ?? this.price,
+      capacity: capacity ?? this.capacity,
+      sold: sold ?? this.sold,
+    );
+  }
+  factory TicketType.fromJson(Map<String, dynamic> json) {
+    return TicketType(
+      id: json['id'] as String,
+      category: TicketCategory.values.firstWhere(
+            (e) => e.name == json['category'],
+        orElse: () => TicketCategory.general,
+      ),
+      price: (json['price'] as num).toDouble(),
+      capacity: json['capacity'] as int,
+      sold: json['sold'] as int? ?? 0,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'category': category.name,
+      'price': price,
+      'capacity': capacity,
+      'sold': sold,
+    };
+  }
 }
 
-// ── Seat ──────────────────────────────────────────────────────────────────────
 class Seat {
   final String id;
   final String row;
@@ -131,9 +151,43 @@ class Seat {
     required this.category,
     this.isBooked = false,
   });
+
+  factory Seat.fromJson(Map<String, dynamic> json) {
+    return Seat(
+      id: json['id'] as String,
+      row: json['row'] as String,
+      number: json['number'] as int,
+      category: TicketCategory.values.firstWhere((e) => e.name == json['category'], orElse: () => TicketCategory.general),
+      isBooked: json['isBooked'] as bool? ?? false,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'row': row,
+      'number': number,
+      'category': category.name,
+      'isBooked': isBooked,
+    };
+  }
+  Seat copyWith({
+    String? id,
+    String? row,
+    int? number,
+    TicketCategory? category,
+    bool? isBooked,
+  }) {
+    return Seat(
+      id: id ?? this.id,
+      row: row ?? this.row,
+      number: number ?? this.number,
+      category: category ?? this.category,
+      isBooked: isBooked ?? this.isBooked,
+    );
+  }
 }
 
-// ── PromoCode ─────────────────────────────────────────────────────────────────
 class PromoCode {
   final String code;
   final double discountPct;
@@ -148,93 +202,39 @@ class PromoCode {
   });
 
   bool get valid => expiry.isAfter(DateTime.now());
+
+  factory PromoCode.fromJson(Map<String, dynamic> json) {
+    return PromoCode(
+      code: json['code'] as String,
+      discountPct: (json['discountPct'] as num).toDouble(),
+      expiry: (json['expiry'] as Timestamp).toDate(),
+      forCategories: (json['forCategories'] as List<dynamic>?)?.map((e) => TicketCategory.values.firstWhere((c) => c.name == e, orElse: () => TicketCategory.general)).toList() ?? [],
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'code': code,
+      'discountPct': discountPct,
+      'expiry': Timestamp.fromDate(expiry),
+      'forCategories': forCategories.map((e) => e.name).toList(),
+    };
+  }
+  PromoCode copyWith({
+    String? code,
+    double? discountPct,
+    DateTime? expiry,
+    List<TicketCategory>? forCategories,
+  }) {
+    return PromoCode(
+      code: code ?? this.code,
+      discountPct: discountPct ?? this.discountPct,
+      expiry: expiry ?? this.expiry,
+      forCategories: forCategories ?? this.forCategories,
+    );
+  }
 }
 
-// ── Event ─────────────────────────────────────────────────────────────────────
-class AppEvent {
-  final String id;
-  final String title;
-  final String description;
-  final String location;
-  final DateTime date;
-  final TimeOfDay start;
-  final TimeOfDay end;
-  final String organizerId;
-  final String organizerName;
-  final EventStatus status;
-  final List<TicketType> ticketTypes;
-  final List<PromoCode> promoCodes;
-  final List<Seat> seats;
-  final String? posterPath;
-
-  AppEvent({
-    required this.id,
-    required this.title,
-    required this.description,
-    required this.location,
-    required this.date,
-    required this.start,
-    required this.end,
-    required this.organizerId,
-    required this.organizerName,
-    required this.status,
-    required this.ticketTypes,
-    this.promoCodes = const [],
-    this.seats = const [],
-    this.posterPath,
-  });
-
-  int get totalSeats =>
-      ticketTypes.fold(0, (s, t) => s + t.capacity);
-  int get bookedSeats =>
-      ticketTypes.fold(0, (s, t) => s + t.sold);
-  int get availableSeats => totalSeats - bookedSeats;
-  bool get isSoldOut => availableSeats <= 0;
-  double get occupancyRate =>
-      totalSeats > 0 ? bookedSeats / totalSeats : 0;
-
-  double get lowestPrice =>
-      ticketTypes.map((t) => t.price).reduce((a, b) => a < b ? a : b);
-}
-
-// ── Booking ───────────────────────────────────────────────────────────────────
-class Booking {
-  final String id;
-  final String eventId;
-  final String eventTitle;
-  final String attendeeId;
-  final String attendeeName;
-  final TicketCategory category;
-  final int quantity;
-  final double subtotal;
-  final double discount;
-  final String? promoCode;
-  final BookingStatus status;
-  final DateTime createdAt;
-  final String qrData;
-  final List<String> seatIds;
-
-  const Booking({
-    required this.id,
-    required this.eventId,
-    required this.eventTitle,
-    required this.attendeeId,
-    required this.attendeeName,
-    required this.category,
-    required this.quantity,
-    required this.subtotal,
-    required this.discount,
-    this.promoCode,
-    required this.status,
-    required this.createdAt,
-    required this.qrData,
-    this.seatIds = const [],
-  });
-
-  double get total => subtotal - discount;
-}
-
-// ── WaitlistEntry ─────────────────────────────────────────────────────────────
 class WaitlistEntry {
   final String id;
   final String eventId;
@@ -253,9 +253,51 @@ class WaitlistEntry {
     required this.position,
     required this.joinedAt,
   });
+
+  factory WaitlistEntry.fromJson(Map<String, dynamic> json) {
+    return WaitlistEntry(
+      id: json['id'] as String,
+      eventId: json['eventId'] as String,
+      attendeeId: json['attendeeId'] as String,
+      attendeeName: json['attendeeName'] as String,
+      email: json['email'] as String,
+      position: json['position'] as int,
+      joinedAt: (json['joinedAt'] as Timestamp).toDate(),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'eventId': eventId,
+      'attendeeId': attendeeId,
+      'attendeeName': attendeeName,
+      'email': email,
+      'position': position,
+      'joinedAt': Timestamp.fromDate(joinedAt),
+    };
+  }
+  WaitlistEntry copyWith({
+    String? id,
+    String? eventId,
+    String? attendeeId,
+    String? attendeeName,
+    String? email,
+    int? position,
+    DateTime? joinedAt,
+  }) {
+    return WaitlistEntry(
+      id: id ?? this.id,
+      eventId: eventId ?? this.eventId,
+      attendeeId: attendeeId ?? this.attendeeId,
+      attendeeName: attendeeName ?? this.attendeeName,
+      email: email ?? this.email,
+      position: position ?? this.position,
+      joinedAt: joinedAt ?? this.joinedAt,
+    );
+  }
 }
 
-// ── DailySales ────────────────────────────────────────────────────────────────
 class DailySales {
   final DateTime date;
   final double revenue;
@@ -263,9 +305,24 @@ class DailySales {
 
   const DailySales(
       {required this.date, required this.revenue, required this.tickets});
+
+  factory DailySales.fromJson(Map<String, dynamic> json) {
+    return DailySales(
+      date: (json['date'] as Timestamp).toDate(),
+      revenue: (json['revenue'] as num).toDouble(),
+      tickets: json['tickets'] as int,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'date': Timestamp.fromDate(date),
+      'revenue': revenue,
+      'tickets': tickets,
+    };
+  }
 }
 
-// ── Notification ──────────────────────────────────────────────────────────────
 enum NotificationType { booking, waitlist, reminder, system }
 
 class AppNotification {
@@ -286,4 +343,47 @@ class AppNotification {
     this.isRead = false,
     this.type = NotificationType.system,
   });
+
+  factory AppNotification.fromJson(Map<String, dynamic> json) {
+    return AppNotification(
+      id: json['id'] as String,
+      userId: json['userId'] as String,
+      title: json['title'] as String,
+      message: json['message'] as String,
+      timestamp: (json['timestamp'] as Timestamp).toDate(),
+      isRead: json['isRead'] as bool? ?? false,
+      type: NotificationType.values.firstWhere((e) => e.name == json['type'], orElse: () => NotificationType.system),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'userId': userId,
+      'title': title,
+      'message': message,
+      'timestamp': Timestamp.fromDate(timestamp),
+      'isRead': isRead,
+      'type': type.name,
+    };
+  }
+  AppNotification copyWith({
+    String? id,
+    String? userId,
+    String? title,
+    String? message,
+    DateTime? timestamp,
+    bool? isRead,
+    NotificationType? type,
+  }) {
+    return AppNotification(
+      id: id ?? this.id,
+      userId: userId ?? this.userId,
+      title: title ?? this.title,
+      message: message ?? this.message,
+      timestamp: timestamp ?? this.timestamp,
+      isRead: isRead ?? this.isRead,
+      type: type ?? this.type,
+    );
+  }
 }

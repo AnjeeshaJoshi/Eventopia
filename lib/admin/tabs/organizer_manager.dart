@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:ems_app/providers/user_provider.dart';
+import 'package:ems_app/l10n/app_localizations.dart';
 
-import '../../auth/app_provider.dart';
 import '../../models.dart';
 import '../../theme.dart';
 import '../../widgets.dart';
@@ -18,226 +19,231 @@ class OrganizerManager extends StatefulWidget {
 
 
 class _OrganizerManagerState extends State<OrganizerManager> {
+  String filter = 'all';
 
-  String filter = "All";
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<UserProvider>().fetchUsers();
+    });
+  }
 
-
-  List<AppUser> filteredUsers(List<AppUser> users){
-
-    if(filter=="Organisers"){
+  List<UserModel> filteredUsers(List<UserModel> users) {
+    if (filter == 'organisers') {
       return users
-          .where((u)=>u.role==UserRole.organizer)
+          .where((u) => u.role == UserRole.organizer)
           .toList();
     }
 
-    if(filter=="Attendees"){
+    if (filter == 'attendees') {
       return users
-          .where((u)=>u.role==UserRole.attendee)
+          .where((u) => u.role == UserRole.attendee)
           .toList();
     }
 
     return users
-        .where((u)=>u.role!=UserRole.admin)
+        .where((u) => u.role != UserRole.admin)
         .toList();
   }
 
 
-
-  void confirmDelete(BuildContext context, AppUser user){
-
+  void confirmDelete(BuildContext context, UserModel user) {
+    final l = AppLocalizations.of(context)!;
     showDialog(
       context: context,
-      builder:(_)=>AlertDialog(
+      builder: (_) =>
+          AlertDialog(
+            title: Text(l.deleteUser),
+            content: Text(
+              l.areYouSureDeleteUser(user.name),
+            ),
 
-        title:
-        const Text("Delete User"),
+      actions: [
 
-        content:
-        Text(
-          "Are you sure you want to delete ${user.name}?",
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: Text(l.cancel),
         ),
 
-        actions:[
-
-          TextButton(
-            onPressed:()=>Navigator.pop(context),
-            child:
-            const Text("Cancel"),
+        TextButton(
+          onPressed: () async {
+            try {
+              await context.read<UserProvider>().deleteUser(user.uid);
+              if (context.mounted) Navigator.pop(context);
+            } catch (e) {
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text(e.toString())));
+              }
+            }
+          },
+          child: Text(
+            l.delete,
+            style: const TextStyle(color: Colors.red),
           ),
-
-          TextButton(
-            onPressed:(){
-
-              context
-                  .read<AppProvider>()
-                  .deleteUser(user.id);
-
-              Navigator.pop(context);
-
-            },
-
-            child:
-            const Text(
-              "Delete",
-              style:
-              TextStyle(color:Colors.red),
-            ),
-          )
-        ],
-      ),
+        )
+      ],
+    )
+    ,
     );
   }
 
 
-
-
-  void editUser(BuildContext context, AppUser user){
-
+  void editUser(BuildContext context, UserModel user) {
+    final l = AppLocalizations.of(context)!;
     final name =
-    TextEditingController(text:user.name);
+    TextEditingController(text: user.name);
 
     final phone =
-    TextEditingController(text:user.phone);
+    TextEditingController(text: user.phone);
 
     final email =
-    TextEditingController(text:user.email);
+    TextEditingController(text: user.email);
 
     final org =
     TextEditingController(
-        text:user.organization ?? ""
+        text: user.organization ?? ""
     );
 
 
     showDialog(
-      context:context,
-      builder:(_)=>AlertDialog(
+      context: context,
+      builder: (_) =>
+          AlertDialog(
+            title: Text(l.editUser),
 
-        title:
-        const Text("Edit User"),
 
+            content: SizedBox(
+              width: 300,
+              height: 260,
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
 
-        content: SizedBox(
-          width: 300,
-          height: 260,
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
+                    AppField(
+                      label: l.name,
+                      controller: name,
+                      prefix: Icons.person,
+                    ),
+                    const SizedBox(height: 6),
+                    AppField(
+                      label: l.emailAddress,
+                      controller: email,
+                      prefix: Icons.email,
+                    ),
+                    const SizedBox(height: 6),
+                    AppField(
+                      label: l.phone,
+                      controller: phone,
+                      prefix: Icons.phone,
+                    ),
 
-                AppField(
-                  label: "Name",
-                  controller: name,
-                  prefix: Icons.person,
+                    if (user.role == UserRole.organizer) ...[
+
+                      const SizedBox(height: 6),
+
+                      AppField(
+                        label: l.organisation,
+                        controller: org,
+                        prefix: Icons.business,
+                      ),
+                    ],
+                  ],
                 ),
-
-                const SizedBox(height: 6),
-
-                AppField(
-                  label: "Email",
-                  controller: email,
-                  prefix: Icons.email,
-                ),
-
-                const SizedBox(height: 6),
-
-                AppField(
-                  label: "Phone",
-                  controller: phone,
-                  prefix: Icons.phone,
-                ),
-
-                if (user.role == UserRole.organizer) ...[
-
-                  const SizedBox(height: 6),
-
-                  AppField(
-                    label: "Organisation",
-                    controller: org,
-                    prefix: Icons.business,
-                  ),
-                ],
-              ],
+              ),
             ),
+
+
+            actions: [
+
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text(l.cancel),
+              ),
+
+
+              Container(
+                decoration: BoxDecoration(
+                  gradient: C.gPrimary,
+                  borderRadius: BorderRadius.circular(24),
+                ),
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.transparent,
+                    shadowColor: Colors.transparent,
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 12,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(24),
+                    ),
+                  ),
+                  onPressed: () async {
+                    try {
+                      await context.read<UserProvider>().updateUser(
+                        user.copyWith(
+                          name: name.text,
+                          phone: phone.text,
+                          email: email.text,
+                          organization:
+                          user.role == UserRole.organizer ? org.text : null,
+                        ),
+                      );
+                      if (context.mounted) Navigator.pop(context);
+                    } catch (e) {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text(e.toString())),
+                        );
+                      }
+                    }
+                  },
+                  child: Text(l.save),
+                ),
+              )
+            ],
           ),
-        ),
-
-
-        actions:[
-
-          TextButton(
-            onPressed:()=>Navigator.pop(context),
-            child:
-            const Text("Cancel"),
-          ),
-
-
-          ElevatedButton(
-            onPressed:(){
-
-              context
-                  .read<AppProvider>()
-                  .updateUser(
-                id:user.id,
-                name:name.text,
-                phone:phone.text,
-                email:email.text,
-                organization:
-                user.role==UserRole.organizer
-                    ? org.text
-                    : null,
-              );
-
-
-              Navigator.pop(context);
-
-            },
-
-            child:
-            const Text("Save"),
-          )
-        ],
-      ),
     );
-
   }
 
 
-
-
-
   @override
-  Widget build(BuildContext context){
-
-    final users =
-    filteredUsers(
-        context.watch<AppProvider>().users
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
+    final users = filteredUsers(
+        context
+            .watch<UserProvider>()
+            .users
     );
 
 
     return SafeArea(
 
-      child:Column(
+      child: Column(
 
-        children:[
+        children: [
 
 
           Padding(
             padding:
             const EdgeInsets.all(16),
 
-            child:Row(
+            child: Row(
 
               mainAxisAlignment:
               MainAxisAlignment.spaceBetween,
 
-              children:[
-
-                const Text(
-                  "Users",
-                  style:
-                  TextStyle(
-                    fontSize:18,
-                    fontWeight:FontWeight.w700,
+              children: [
+                Text(
+                  l.users,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
 
@@ -247,18 +253,16 @@ class _OrganizerManagerState extends State<OrganizerManager> {
                   icon:
                   const Icon(Icons.add),
 
-                  onPressed:(){
-
+                  onPressed: () {
                     showModalBottomSheet(
-                      context:context,
-                      isScrollControlled:true,
+                      context: context,
+                      isScrollControlled: true,
                       backgroundColor: Colors.transparent,
 
-                      builder:(_)=>
+                      builder: (_) =>
                       const RegisterOrgSheet(),
 
                     );
-
                   },
 
                 )
@@ -268,57 +272,68 @@ class _OrganizerManagerState extends State<OrganizerManager> {
           ),
 
 
-
           Wrap(
 
-            spacing:8,
+            spacing: 8,
 
-            children:[
+            children: const ['all', 'organisers', 'attendees'].map((e) =>
+                ChoiceChip(
+                  label: Text(
+                    e == 'all'
+                        ? l.all
+                        : e == 'organisers'
+                            ? l.organisers
+                            : l.attendees,
+                    style: TextStyle(
+                      color: filter == e ? C.rose : C.t1,
+                      fontWeight:
+                          filter == e ? FontWeight.w700 : FontWeight.w600,
+                    ),
+                  ),
+                  selected: filter == e,
+                  showCheckmark: true,
+                  checkmarkColor: C.rose,
+                  selectedColor: C.rose.withOpacity(.10),
+                  backgroundColor: C.surface,
+                  side: BorderSide(
+                    color: filter == e ? C.rose : C.border,
+                    width: filter == e ? 1.4 : 1,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(9),
+                  ),
+                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  visualDensity: VisualDensity.compact,
+                  onSelected: (_) {
+                    setState(() {
+                      filter = e;
+                    });
+                  },
 
-              "All",
-              "Organisers",
-              "Attendees"
-
-            ].map((e)=>ChoiceChip(
-
-              label:Text(e),
-
-              selected:filter==e,
-
-              onSelected:(_){
-
-                setState((){
-                  filter=e;
-                });
-
-              },
-
-            )).toList(),
+                )).toList(),
 
           ),
 
 
-
           Expanded(
 
-            child:ListView.builder(
+            child: ListView.builder(
 
               padding:
               const EdgeInsets.all(16),
 
-              itemCount:users.length,
+              itemCount: users.length,
 
 
-              itemBuilder:(_,i){
-
-                final u=users[i];
+              itemBuilder: (_, i) {
+                final u = users[i];
 
 
                 return GCard(
 
-                  child:Row(
+                  child: Row(
 
-                    children:[
+                    children: [
 
                       CircleAvatar(
                         child:
@@ -326,17 +341,17 @@ class _OrganizerManagerState extends State<OrganizerManager> {
                       ),
 
 
-                      const SizedBox(width:12),
+                      const SizedBox(width: 12),
 
 
                       Expanded(
 
-                        child:Column(
+                        child: Column(
 
                           crossAxisAlignment:
                           CrossAxisAlignment.start,
 
-                          children:[
+                          children: [
 
                             Text(
                               u.name,
@@ -351,8 +366,8 @@ class _OrganizerManagerState extends State<OrganizerManager> {
                               u.email,
                               style:
                               const TextStyle(
-                                fontSize:12,
-                                color:C.t2,
+                                fontSize: 12,
+                                color: C.t2,
                               ),
                             ),
 
@@ -361,8 +376,8 @@ class _OrganizerManagerState extends State<OrganizerManager> {
                                   .toUpperCase(),
                               style:
                               const TextStyle(
-                                fontSize:11,
-                                color:C.org,
+                                fontSize: 11,
+                                color: C.org,
                               ),
                             )
 
@@ -371,33 +386,28 @@ class _OrganizerManagerState extends State<OrganizerManager> {
                       ),
 
 
-                      IconButton(
-                        icon:
-                        const Icon(Icons.edit),
-
-                        onPressed:(){
-
-                          editUser(context,u);
-
-                        },
+                      Tooltip(
+                        message: l.editUser,
+                        child: IconButton(
+                          icon: const Icon(Icons.edit),
+                          onPressed: () {
+                            editUser(context, u);
+                          },
+                        ),
                       ),
 
 
-
-                      IconButton(
-
-                        icon:
-                        const Icon(
-                          Icons.delete_outline,
-                          color:Colors.red,
+                      Tooltip(
+                        message: l.deleteUser,
+                        child: IconButton(
+                          icon: const Icon(
+                            Icons.delete_outline,
+                            color: Colors.red,
+                          ),
+                          onPressed: () {
+                            confirmDelete(context, u);
+                          },
                         ),
-
-                        onPressed:(){
-
-                          confirmDelete(
-                              context,u);
-
-                        },
                       )
 
 
@@ -411,6 +421,5 @@ class _OrganizerManagerState extends State<OrganizerManager> {
         ],
       ),
     );
-
   }
 }

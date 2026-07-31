@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:ems_app/l10n/app_localizations.dart';
 
 import '../models.dart';
 import '../theme.dart';
 import '../widgets.dart';
-import 'app_provider.dart';
+import 'package:ems_app/providers/auth_provider.dart';
+import '../utils/error_handler.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -26,7 +28,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   String? _error;
 
   // Only attendees self-register; admins register organisers separately.
-  // We still show the label so the user knows their role.
+  // show the label so the user knows their role.
   final UserRole _role = UserRole.attendee;
 
   @override
@@ -44,45 +46,56 @@ class _RegisterScreenState extends State<RegisterScreen> {
     if (!_form.currentState!.validate()) return;
     setState(() { _loading = true; _error = null; });
 
-    await Future.delayed(const Duration(milliseconds: 900));
+    try {
+      final authProvider = context.read<AuthProvider>();
+      await authProvider.register(
+        name: _name.text.trim(),
+        email: _email.text.trim(),
+        phone: _phone.text.trim(),
+        password: _pwd.text,
+        role: _role.name,
+      );
 
-    final err = context.read<AppProvider>().register(
-      name: _name.text.trim(),
-      email: _email.text.trim(),
-      phone: _phone.text.trim(),
-      password: _pwd.text,
-      role: _role,
-    );
+      if (!mounted) return;
+      setState(() => _loading = false);
 
-    if (!mounted) return;
-    setState(() => _loading = false);
-
-    if (err != null) {
-      setState(() => _error = err);
-    } else {
-      // Auto-login the newly registered attendee
-      context.read<AppProvider>().login(_email.text.trim(), _pwd.text);
-      if (mounted) {
-        Navigator.pushReplacementNamed(context, '/attendee');
+      if (authProvider.error != null) {
+        setState(() => _error = authProvider.error);
+      } else {
+        // Auto-login the newly registered attendee
+        if (mounted) {
+          Navigator.pushReplacementNamed(context, '/attendee');
+        }
       }
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _loading = false;
+        _error = ErrorHandler.getErrorMessage(e);
+      });
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
+
     return Scaffold(
+      floatingActionButton: const LanguageSwitcher(),
+      floatingActionButtonLocation: FloatingActionButtonLocation.endTop,
       body: Container(
-        decoration: const BoxDecoration(color: const Color(0xFFF8FAFC),),
+        decoration: const BoxDecoration(color: Color(0xFFF8FAFC)),
         child: SafeArea(
           child: CustomScrollView(
             slivers: [
-              // ── Header bar ──────────────────────────────────────────────
+              // Header bar
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
                   child: Row(
                     children: [
                       IconButton(
+                        tooltip: l.back,
                         icon: const Icon(Icons.arrow_back_ios_new_rounded,
                             size: 20),
                         onPressed: () => Navigator.pop(context),
@@ -96,7 +109,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 24),
                 sliver: SliverList(
                   delegate: SliverChildListDelegate([
-                    // ── Branding ──────────────────────────────────────────
+                    // Branding
                     Column(
                       children: [
                         const SizedBox(height: 8),
@@ -118,18 +131,21 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               size: 34, color: Colors.white),
                         ),
                         const SizedBox(height: 16),
-                        const Text(
-                          'Create Account',
-                          style: TextStyle(
-                            fontSize: 26,
-                            fontWeight: FontWeight.w800,
-                            color: Color(0xFF1F2937),
+                        Semantics(
+                          header: true,
+                          child: Text(
+                            l.createAccountTitle,
+                            style: const TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.w800,
+                              color: Color(0xFF1F2937),
+                            ),
                           ),
                         ),
                         const SizedBox(height: 4),
-                        const Text(
-                          'Join Eventopia',
-                          style: TextStyle(
+                        Text(
+                          l.joinEventopia,
+                          style: const TextStyle(
                             fontSize: 13,
                             color: Colors.grey,
                           ),
@@ -139,14 +155,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                     const SizedBox(height: 28),
 
-                    // ── Form ─────────────────────────────────────────────
+                    // Form
                     GCard(
                       child: Form(
                         key: _form,
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            // Role pill (read-only, informational)
                             Container(
                               width: double.infinity,
                               padding: const EdgeInsets.symmetric(
@@ -163,10 +178,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                   Icon(Icons.person_rounded,
                                       color: C.attendee, size: 16),
                                   const SizedBox(width: 8),
-                                  const Text('Registering as: ',
-                                      style: TextStyle(
+                                  Text('${l.registeringAs} ',
+                                      style: const TextStyle(
                                           fontSize: 13, color: C.t2)),
-                                  Text('Attendee',
+                                  Text(l.attendee,
                                       style: TextStyle(
                                           fontSize: 13,
                                           fontWeight: FontWeight.w600,
@@ -178,14 +193,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                             // Full Name
                             AppField(
-                              label: 'Full Name',
+                              label: l.fullName,
                               controller: _name,
                               prefix: Icons.person_outline_rounded,
                               validator: (v) {
                                 if (v == null || v.trim().isEmpty)
-                                  return 'Full name is required';
+                                  return l.fullNameIsRequired;
                                 if (v.trim().length < 2)
-                                  return 'Name is too short';
+                                  return l.nameIsTooShort;
                                 return null;
                               },
                             ),
@@ -193,16 +208,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                             // Email
                             AppField(
-                              label: 'Email Address',
+                              label: l.emailAddress,
                               controller: _email,
                               keyboard: TextInputType.emailAddress,
                               prefix: Icons.email_outlined,
                               validator: (v) {
                                 if (v == null || v.trim().isEmpty)
-                                  return 'Email is required';
+                                  return l.emailIsRequired;
                                 if (!RegExp(r'^[\w\.\-]+@[\w\-]+\.\w{2,}$')
                                     .hasMatch(v.trim()))
-                                  return 'Enter a valid email address';
+                                  return l.enterValidEmail;
                                 return null;
                               },
                             ),
@@ -210,15 +225,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                             // Phone
                             AppField(
-                              label: 'Phone Number',
+                              label: l.phoneNumber,
                               controller: _phone,
                               keyboard: TextInputType.phone,
                               prefix: Icons.phone_outlined,
                               validator: (v) {
                                 if (v == null || v.trim().isEmpty)
-                                  return 'Phone number is required';
+                                  return l.phoneIsRequired;
                                 if (v.trim().length < 7)
-                                  return 'Enter a valid phone number';
+                                  return l.enterValidPhone;
                                 return null;
                               },
                             ),
@@ -226,11 +241,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                             // Password
                             AppField(
-                              label: 'Password',
+                              label: l.password,
                               controller: _pwd,
                               obscure: _hidePwd,
                               prefix: Icons.lock_outline_rounded,
                               suffix: IconButton(
+                                tooltip: l.password,
                                 icon: Icon(
                                   _hidePwd
                                       ? Icons.visibility_off_rounded
@@ -243,14 +259,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               ),
                               validator: (v) {
                                 if (v == null || v.isEmpty)
-                                  return 'Password is required';
+                                  return l.passwordIsRequired;
                                 if (v.length < 6)
-                                  return 'Minimum 6 characters';
+                                  return l.minimumSixChars;
                                 return null;
                               },
                             ),
 
-                            // Strength bar (reactive)
                             AnimatedBuilder(
                               animation: _pwd,
                               builder: (_, __) =>
@@ -261,11 +276,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                             // Confirm
                             AppField(
-                              label: 'Confirm Password',
+                              label: l.confirmPassword,
                               controller: _confirm,
                               obscure: _hideConfirm,
                               prefix: Icons.lock_outline_rounded,
                               suffix: IconButton(
+                                tooltip: l.confirmPassword,
                                 icon: Icon(
                                   _hideConfirm
                                       ? Icons.visibility_off_rounded
@@ -278,25 +294,28 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               ),
                               validator: (v) {
                                 if (v == null || v.isEmpty)
-                                  return 'Please confirm your password';
+                                  return l.pleaseConfirmPassword;
                                 if (v != _pwd.text)
-                                  return 'Passwords do not match';
+                                  return l.passwordsDoNotMatch;
                                 return null;
                               },
                             ),
 
                             if (_error != null) ErrorBanner(_error!),
 
-                            const SizedBox(height: 22),
+                            const SizedBox(height: 20),
                             Padding(padding: const EdgeInsets.symmetric(horizontal: 40),
                             child: SizedBox(
                               width: double.infinity,
-                              child: GBtn(
-                                label: 'Create Account',
-                                onTap: _submit,
-                                loading: _loading,
-                                gradient: C.gPrimary,
-                                icon: Icons.how_to_reg_rounded,
+                              child: Semantics(
+                                button: true,
+                                label: l.createAccountTitle,
+                                child: GBtn(
+                                  label: l.createAccountTitle,
+                                  onTap: _submit,
+                                  loading: _loading,
+                                  gradient: C.gPrimary,
+                                ),
                               ),
                             ),
                             ),
@@ -307,18 +326,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                     const SizedBox(height: 20),
 
-                    // ── Already have account ──────────────────────────────
+                    // Already have account
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Text('Already have an account?  ',
-                            style: TextStyle(color: C.t2, fontSize: 14)),
+                        Text('${l.alreadyHaveAccount}  ',
+                            style: const TextStyle(color: C.t2, fontSize: 12)),
                         GestureDetector(
                           onTap: () => Navigator.pop(context),
-                          child: const Text('Sign In',
-                              style: TextStyle(
+                          child: Text(l.signIn,
+                              style: const TextStyle(
                                   color: Color(0xFFEC4899),
-                                  fontSize: 14,
+                                  fontSize: 12,
                                   fontWeight: FontWeight.w600)),
                         ),
                       ],

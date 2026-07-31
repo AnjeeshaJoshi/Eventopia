@@ -1,20 +1,21 @@
 import 'package:ems_app/models.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:ems_app/l10n/app_localizations.dart';
 
 import '../admin/tabs/changepassword_screen.dart';
 import '../theme.dart';
 import '../widgets.dart';
 import 'register_screen.dart';
 import 'package:provider/provider.dart';
-import 'app_provider.dart';
+import 'package:ems_app/providers/auth_provider.dart';
+import '../utils/error_handler.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState(
-  );
+  State<LoginScreen> createState() => _LoginScreenState();
 }
 
 class _LoginScreenState extends State<LoginScreen> {
@@ -31,6 +32,7 @@ class _LoginScreenState extends State<LoginScreen> {
     _pwd.dispose();
     super.dispose();
   }
+
   Future<void> _login() async {
     FocusScope.of(context).unfocus();
 
@@ -41,43 +43,53 @@ class _LoginScreenState extends State<LoginScreen> {
       _error = null;
     });
 
-    await Future.delayed(const Duration(milliseconds: 800));
+    try {
+      final authProvider = context.read<AuthProvider>();
+      await authProvider.login(
+        _email.text.trim(),
+        _pwd.text,
+      );
 
-    final prov = context.read<AppProvider>();
+      if (!mounted) return;
 
-    final err = prov.login(
-      _email.text.trim(),
-      _pwd.text,
-    );
+      setState(() => _loading = false);
 
-    if (!mounted) return;
+      final user = authProvider.currentUser;
+      if (user == null) {
+        setState(() => _error = authProvider.error);
+        return;
+      }
 
-    setState(() => _loading = false);
-
-    if (err != null) {
-      setState(() => _error = err);
-    } else {
-      final user = prov.current!;
       if (user.role == UserRole.organizer && user.mustChangePassword) {
-        // Navigate to organizer dashboard (profile tab) for password change
         Navigator.pushReplacementNamed(context, '/organizer');
         if (mounted) {
+          final l = AppLocalizations.of(context)!;
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Please change your default password to continue.'),
-              duration: Duration(seconds: 4),
+            SnackBar(
+              content: Text(l.changeDefaultPasswordPrompt),
+              duration: const Duration(seconds: 4),
             ),
           );
         }
       } else {
         _navigate(user.role);
       }
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _loading = false;
+        _error = ErrorHandler.getErrorMessage(e);
+      });
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
+
     return Scaffold(
+      floatingActionButton: const LanguageSwitcher(),
+      floatingActionButtonLocation: FloatingActionButtonLocation.endTop,
       body: Container(
         color: const Color(0xFFF8FAFC),
         child: SafeArea(
@@ -104,19 +116,22 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                           ),
 
-                          const Text(
-                            'Eventopia',
-                            style: TextStyle(
-                              fontSize: 24,
-                              fontWeight: FontWeight.w800,
-                              color: Color(0xFF7C3AED),
+                          Semantics(
+                            header: true,
+                            child: Text(
+                              l.appTitle,
+                              style: const TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.w800,
+                                color: Color(0xFF7C3AED),
+                              ),
                             ),
                           ),
                           const SizedBox(height: 8),
 
                           Text(
-                            'Welcome Back!',
-                            style: TextStyle(
+                            l.welcomeBack,
+                            style: const TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
                               color: Color(0xFF1F2937),
@@ -126,8 +141,8 @@ class _LoginScreenState extends State<LoginScreen> {
                           const SizedBox(height: 4),
 
                           Text(
-                            'Login to continue',
-                            style: TextStyle(
+                            l.loginToContinue,
+                            style: const TextStyle(
                               fontSize: 13,
                               color: Colors.grey,
                             ),
@@ -143,22 +158,23 @@ class _LoginScreenState extends State<LoginScreen> {
                               child: Column(
                                 children: [
                                   AppField(
-                                    label: 'Email Address',
+                                    label: l.emailAddress,
                                     controller: _email,
                                     keyboard: TextInputType.emailAddress,
                                     prefix: Icons.email_outlined,
                                     validator: (v) =>
                                         (v == null || v.trim().isEmpty)
-                                            ? 'Email is required'
+                                            ? l.emailIsRequired
                                             : null,
                                   ),
                                   const SizedBox(height: 14),
                                   AppField(
-                                    label: 'Password',
+                                    label: l.password,
                                     controller: _pwd,
                                     obscure: _hidePwd,
                                     prefix: Icons.lock_outline_rounded,
                                     suffix: IconButton(
+                                      tooltip: l.password,
                                       icon: Icon(
                                         _hidePwd
                                             ? Icons.visibility_off_rounded
@@ -170,7 +186,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                           setState(() => _hidePwd = !_hidePwd),
                                     ),
                                     validator: (v) => (v == null || v.isEmpty)
-                                        ? 'Password is required'
+                                        ? l.passwordIsRequired
                                         : null,
                                   ),
                                   const SizedBox(height: 6),
@@ -192,10 +208,11 @@ class _LoginScreenState extends State<LoginScreen> {
                                         tapTargetSize:
                                             MaterialTapTargetSize.shrinkWrap,
                                       ),
-                                      child: const Text(
-                                        'Forgot Password?',
-                                        style: TextStyle(
+                                      child: Text(
+                                        l.forgotPassword,
+                                        style: const TextStyle(
                                           color: Color(0xFFEC4899),
+                                          fontSize: 12,
                                           fontWeight: FontWeight.w600,
                                         ),
                                       ),
@@ -205,11 +222,15 @@ class _LoginScreenState extends State<LoginScreen> {
 
                                   const SizedBox(height: 18),
                                   Padding(padding: const EdgeInsets.symmetric(horizontal: 50),
-                                    child: GBtn(
-                                      label: 'Log In',
-                                      onTap: _login,
-                                      loading: _loading,
-                                      icon: Icons.login_rounded,
+                                    child: Semantics(
+                                      button: true,
+                                      label: l.logIn,
+                                      child: GBtn(
+                                        label: l.logIn,
+                                        onTap: _login,
+                                        loading: _loading,
+                                        icon: Icons.login_rounded,
+                                      ),
                                     ),
                                   ),
                                 ],
@@ -232,17 +253,18 @@ class _LoginScreenState extends State<LoginScreen> {
                               );
                             },
                             child: RichText(
-                              text: const TextSpan(
-                                style: TextStyle(
+                              text: TextSpan(
+                                style: const TextStyle(
                                   color: Color(0xFF6B7280),
-                                  fontSize: 13,
+                                  fontSize: 15,
                                 ),
                                 children: [
-                                  TextSpan(text: "Don't have an account? "),
+                                  TextSpan(text: l.dontHaveAccount),
                                   TextSpan(
-                                    text: "Create Account",
-                                    style: TextStyle(
+                                    text: l.createAccountTitle,
+                                    style: const TextStyle(
                                       color: Color(0xFFEC4899),
+                                      fontSize: 15,
                                       fontWeight: FontWeight.bold,
                                     ),
                                   ),

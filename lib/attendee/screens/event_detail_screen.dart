@@ -1,21 +1,58 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:ems_app/l10n/app_localizations.dart';
+import 'package:provider/provider.dart';
+import 'package:ems_app/providers/event_provider.dart';
 
 import '../../models.dart';
 import '../../theme.dart';
 import '../../widgets.dart';
 import '../widgets/booking_sheet.dart';
+import '../widgets/soldout_sheet.dart';
 import 'seat_layout_screen.dart';
 
 class EventDetailScreen extends StatelessWidget {
-  final AppEvent event;
+  final EventModel event;
 
   const EventDetailScreen({super.key, required this.event});
 
+  Widget _fallbackPoster() => Image.asset(
+        'assets/images/cultural.jpg',
+        fit: BoxFit.cover,
+      );
+
+  String _ticketCategoryLabel(BuildContext context, TicketCategory category) {
+    switch (Localizations.localeOf(context).languageCode) {
+      case 'ne':
+        switch (category) {
+          case TicketCategory.vip:
+            return 'विशेष';
+          case TicketCategory.general:
+            return 'सामान्य प्रवेश';
+          case TicketCategory.senior:
+            return 'ज्येष्ठ नागरिक';
+          case TicketCategory.child:
+            return 'बालबालिका';
+        }
+      case 'hi':
+        switch (category) {
+          case TicketCategory.vip:
+            return 'विशेष';
+          case TicketCategory.general:
+            return 'सामान्य प्रवेश';
+          case TicketCategory.senior:
+            return 'वरिष्ठ नागरिक';
+          case TicketCategory.child:
+            return 'बच्चा';
+        }
+      default:
+        return category.label;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     final now = DateTime.now();
     final isPast = event.date.isBefore(DateTime(now.year, now.month, now.day));
     final canBook = event.status == EventStatus.upcoming && !isPast;
@@ -34,38 +71,20 @@ class EventDetailScreen extends StatelessWidget {
                 fit: StackFit.expand,
                 children: [
                   // Show poster image if available, else show placeholder
-                  if (event.posterPath != null)
-                    event.posterPath!.startsWith('assets/')
-                        ? Image.asset(
-                            event.posterPath!,
+                  if (event.image != null && event.image!.isNotEmpty)
+                    event.image!.startsWith('http')
+                        ? Image.network(
+                            event.image!,
                             fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => Container(
-                              color: C.violet.withOpacity(0.1),
-                              child: Center(
-                                child: Icon(Icons.event_seat_rounded,
-                                    size: 64, color: C.violet.withOpacity(0.2)),
-                              ),
-                            ),
+                            errorBuilder: (_, __, ___) => _fallbackPoster(),
                           )
-                        : Image.file(
-                            File(event.posterPath!),
+                        : Image.asset(
+                            event.image!,
                             fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => Container(
-                              color: C.violet.withOpacity(0.1),
-                              child: Center(
-                                child: Icon(Icons.event_seat_rounded,
-                                    size: 64, color: C.violet.withOpacity(0.2)),
-                              ),
-                            ),
+                            errorBuilder: (_, __, ___) => _fallbackPoster(),
                           )
                   else
-                    Container(
-                      color: C.violet.withOpacity(0.1),
-                      child: Center(
-                        child: Icon(Icons.event_seat_rounded,
-                            size: 64, color: C.violet.withOpacity(0.2)),
-                      ),
-                    ),
+                    _fallbackPoster(),
                   Container(
                     decoration: const BoxDecoration(
                       gradient: LinearGradient(
@@ -94,13 +113,13 @@ class EventDetailScreen extends StatelessWidget {
                         borderRadius: BorderRadius.circular(8),
                         border: Border.all(color: C.violet.withOpacity(0.3)),
                       ),
-                      child: const Text(
-                        'EVENT',
-                        style: TextStyle(color: C.violet, fontSize: 10, fontWeight: FontWeight.bold),
+                      child: Text(
+                        l.event.toUpperCase(),
+                        style: const TextStyle(color: C.violet, fontSize: 10, fontWeight: FontWeight.bold),
                       ),
                     ),
                     Text(
-                      isPast ? 'COMPLETED' : (event.status == EventStatus.upcoming ? 'UPCOMING' : event.status.name.toUpperCase()),
+                      isPast ? l.completedUpper.toUpperCase() : (event.status == EventStatus.upcoming ? l.upcoming.toUpperCase() : event.status.name.toUpperCase()),
                       style: TextStyle(
                         color: isPast ? C.t3 : (event.status == EventStatus.upcoming ? C.teal : C.rose),
                         fontSize: 10,
@@ -115,13 +134,19 @@ class EventDetailScreen extends StatelessWidget {
                   style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w800, color: C.t1, height: 1.2),
                 ),
                 const SizedBox(height: 20),
-                _buildInfoRow(Icons.calendar_month_rounded, DateFormat('EEEE, MMM d, yyyy').format(event.date)),
+                _buildInfoRow(
+                  Icons.calendar_month_rounded,
+                  DateFormat(
+                    'EEEE, MMM d, yyyy',
+                    Localizations.localeOf(context).languageCode,
+                  ).format(event.date),
+                ),
                 const SizedBox(height: 12),
-                _buildInfoRow(Icons.access_time_rounded, DateFormat('h:mm a').format(event.date)),
+                _buildInfoRow(Icons.access_time_rounded, '${event.start.format(context)} – ${event.end.format(context)}'),
                 const SizedBox(height: 12),
-                _buildInfoRow(Icons.location_on_rounded, event.location),
+                _buildInfoRow(Icons.location_on_rounded, event.venue),
                 const SizedBox(height: 24),
-                const SectionTitle(title: 'About', action: null),
+                SectionTitle(title: l.about, action: null),
                 const SizedBox(height: 12),
                 Text(
                   event.description,
@@ -139,18 +164,21 @@ class EventDetailScreen extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Row(
+                        Row(
                           children: [
-                            Icon(Icons.local_offer_rounded, color: C.teal, size: 18),
-                            SizedBox(width: 8),
-                            Text('Available Promo Codes', style: TextStyle(fontWeight: FontWeight.w700, color: C.teal)),
+                            const Icon(Icons.local_offer_rounded, color: C.teal, size: 18),
+                            const SizedBox(width: 8),
+                            Text(l.availablePromoCodes, style: const TextStyle(fontWeight: FontWeight.w700, color: C.teal)),
                           ],
                         ),
                         const SizedBox(height: 8),
                         ...event.promoCodes.where((p) => p.valid).map((p) => Padding(
                               padding: const EdgeInsets.only(top: 4),
                               child: Text(
-                                'Use code ${p.code} for ${p.discountPct.toStringAsFixed(0)}% off!',
+                                l.useCodeForDiscount(
+                                  p.code,
+                                  p.discountPct.toStringAsFixed(0),
+                                ),
                                 style: const TextStyle(fontSize: 13, color: C.teal, fontWeight: FontWeight.w600),
                               ),
                             )),
@@ -159,9 +187,11 @@ class EventDetailScreen extends StatelessWidget {
                   ),
                 ],
                 const SizedBox(height: 24),
-                const SectionTitle(title: 'Tickets', action: null),
+                SectionTitle(title: l.tickets, action: null),
                 const SizedBox(height: 12),
-                ...event.ticketTypes.map((t) => Container(
+                ...event.ticketTypes
+                    .where((ticket) => ticket.capacity > 0)
+                    .map((t) => Container(
                       margin: const EdgeInsets.only(bottom: 12),
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
@@ -177,13 +207,16 @@ class EventDetailScreen extends StatelessWidget {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  t.category.label,
+                                  _ticketCategoryLabel(context, t.category),
                                   style: const TextStyle(color: C.t1, fontWeight: FontWeight.w600, fontSize: 16),
                                   overflow: TextOverflow.ellipsis,
                                   maxLines: 1,
                                 ),
                                 const SizedBox(height: 4),
-                                Text('${t.capacity - t.sold} remaining', style: const TextStyle(color: C.t3, fontSize: 12)),
+                                Text(
+                                  l.remainingCount((t.capacity - t.sold).toString()),
+                                  style: const TextStyle(color: C.t3, fontSize: 12),
+                                ),
                               ],
                             ),
                           ),
@@ -204,15 +237,39 @@ class EventDetailScreen extends StatelessWidget {
         child: SizedBox(
           width: double.infinity,
           child: GBtn(
-            label: isPast ? 'Event Ended' : (event.status == EventStatus.upcoming ? 'Book Now' : 'Not Available'),
-            onTap: canBook
-                ? () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => SeatLayoutScreen(event: event),
-                      ),
-                    );
+            label: isPast
+                ? l.eventEnded
+                : event.isSoldOut && event.status == EventStatus.upcoming
+                    ? l.joinWaitlist
+                    : (event.status == EventStatus.upcoming
+                        ? l.bookNow
+                        : l.notAvailable),
+            onTap: event.isSoldOut && !isPast && event.status == EventStatus.upcoming
+                ? () => showModalBottomSheet(
+                      context: context,
+                      isScrollControlled: true,
+                      backgroundColor: Colors.transparent,
+                      builder: (_) => SoldOutSheet(event: event),
+                    )
+                : canBook
+                ? () async {
+                    try {
+                      final eventWithSeats = await context
+                          .read<EventProvider>()
+                          .ensureSeats(event);
+                      if (!context.mounted) return;
+                      await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => SeatLayoutScreen(event: eventWithSeats),
+                        ),
+                      );
+                    } catch (_) {
+                      if (!context.mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Unable to load seats. Please try again.')),
+                      );
+                    }
                   }
                 : null,
           ),

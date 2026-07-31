@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../auth/app_provider.dart';
+import 'package:ems_app/providers/auth_provider.dart';
+import 'package:ems_app/l10n/app_localizations.dart';
+import '../../theme.dart';
+import '../../widgets.dart';
 
 class ChangePasswordScreen extends StatefulWidget {
   const ChangePasswordScreen({super.key});
@@ -13,54 +16,117 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
   final _formKey = GlobalKey<FormState>();
 
   final _email = TextEditingController();
-  final _newPassword = TextEditingController();
-  final _confirmPassword = TextEditingController();
-
-  bool _hidePassword = true;
-  bool _hideConfirmPassword = true;
+  bool _sending = false;
+  bool _sent = false;
 
   @override
   void dispose() {
     _email.dispose();
-    _newPassword.dispose();
-    _confirmPassword.dispose();
     super.dispose();
   }
 
-  void _resetPassword() {
+  void _resetPassword() async {
     if (!_formKey.currentState!.validate()) return;
 
-    final err = context.read<AppProvider>().resetPassword(
-      _email.text,
-      _newPassword.text,
-    );
-
-    if (err != null) {
+    setState(() => _sending = true);
+    try {
+      await context.read<AuthProvider>().resetPassword(_email.text.trim());
+      if (!mounted) return;
+      setState(() => _sent = true);
+    } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(err), backgroundColor: Colors.red),
+        SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
       );
-      return;
+    } finally {
+      if (mounted) setState(() => _sending = false);
     }
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Password changed successfully. Please login.'),
-      ),
-    );
-
-    Navigator.pop(context);
   }
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
+    final languageCode = Localizations.localeOf(context).languageCode;
+    if (_sent) {
+      final title = languageCode == 'ne'
+          ? 'रिसेट लिंक पठाइयो'
+          : languageCode == 'hi'
+              ? 'रीसेट लिंक भेज दिया गया'
+              : 'Check your email';
+      final message = languageCode == 'ne'
+          ? 'हामीले ${_email.text.trim()} मा पासवर्ड रिसेट लिंक पठाएका छौं। इनबक्स र स्प्याम जाँच्नुहोस्।'
+          : languageCode == 'hi'
+              ? 'हमने ${_email.text.trim()} पर पासवर्ड रीसेट लिंक भेज दिया है। इनबॉक्स और स्पैम जाँचें।'
+              : 'We sent a password-reset link to ${_email.text.trim()}. Check your inbox and spam folder.';
+      return Scaffold(
+        backgroundColor: const Color(0xFFF8FAFC),
+        appBar: AppBar(backgroundColor: Colors.transparent, elevation: 0),
+        body: SafeArea(
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: GCard(
+                padding: const EdgeInsets.all(28),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 76,
+                      height: 76,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: C.teal.withOpacity(.12),
+                      ),
+                      child: const Icon(Icons.mark_email_read_rounded,
+                          color: C.teal, size: 38),
+                    ),
+                    const SizedBox(height: 20),
+                    Text(title,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(fontSize: 21, fontWeight: FontWeight.w700)),
+                    const SizedBox(height: 10),
+                    Text(message,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(color: C.t2, height: 1.5)),
+                    const SizedBox(height: 24),
+                    GBtn(
+                      label: l.back,
+                      onTap: () => Navigator.pop(context),
+                      icon: Icons.arrow_back_rounded,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+    final resetDescription = languageCode == 'ne'
+        ? 'तपाईंको इमेल प्रविष्ट गर्नुहोस्। हामी सुरक्षित पासवर्ड रिसेट लिंक पठाउनेछौं।'
+        : languageCode == 'hi'
+            ? 'अपना ईमेल दर्ज करें। हम आपको सुरक्षित पासवर्ड रीसेट लिंक भेजेंगे।'
+            : 'Enter your email and we will send a secure password-reset link.';
+    final sendResetLink = languageCode == 'ne'
+        ? 'रिसेट लिंक पठाउनुहोस्'
+        : languageCode == 'hi'
+            ? 'रीसेट लिंक भेजें'
+            : 'Send reset link';
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+          padding: EdgeInsets.fromLTRB(
+            24,
+            24,
+            24,
+            MediaQuery.of(context).viewInsets.bottom + 24,
+          ),
         child: Column(
           children: [
             const SizedBox(height: 10),
@@ -78,19 +144,22 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
               ),
             ),
             const SizedBox(height: 20),
-            const Text(
-              'Change Password',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.w700,
-                color: Color(0xFF1F2937),
+            Semantics(
+              label: l.changePassword,
+              child: Text(
+                l.changePassword,
+                style: const TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF1F2937),
+                ),
               ),
             ),
             const SizedBox(height: 8),
-            const Text(
-              'Enter a new password below to secure your account.',
+            Text(
+              resetDescription,
               textAlign: TextAlign.center,
-              style: TextStyle(
+              style: const TextStyle(
                 color: Colors.grey,
               ),
             ),
@@ -110,7 +179,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                         controller: _email,
                         keyboardType: TextInputType.emailAddress,
                         decoration: InputDecoration(
-                          labelText: 'Email Address',
+                          labelText: l.emailAddress,
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
@@ -118,70 +187,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                         ),
                         validator: (value) {
                           if (value == null || value.trim().isEmpty) {
-                            return 'Email is required';
-                          }
-                          return null;
-                        },
-                      ),
-                      const SizedBox(height: 20),
-                      TextFormField(
-                        controller: _newPassword,
-                        obscureText: _hidePassword,
-                        decoration: InputDecoration(
-                          labelText: 'New Password',
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          prefixIcon: const Icon(Icons.lock_outline_rounded),
-                          suffixIcon: IconButton(
-                            icon: Icon(
-                              _hidePassword
-                                  ? Icons.visibility_off
-                                  : Icons.visibility,
-                            ),
-                            onPressed: () {
-                              setState(() {
-                                _hidePassword = !_hidePassword;
-                              });
-                            },
-                          ),
-                        ),
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Password is required';
-                          }
-                          if (value.length < 6) {
-                            return 'Minimum 6 characters';
-                          }
-                          return null;
-                        },
-                      ),
-                      const SizedBox(height: 20),
-                      TextFormField(
-                        controller: _confirmPassword,
-                        obscureText: _hideConfirmPassword,
-                        decoration: InputDecoration(
-                          labelText: 'Confirm Password',
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          prefixIcon: const Icon(Icons.lock_outline_rounded),
-                          suffixIcon: IconButton(
-                            icon: Icon(
-                              _hideConfirmPassword
-                                  ? Icons.visibility_off
-                                  : Icons.visibility,
-                            ),
-                            onPressed: () {
-                              setState(() {
-                                _hideConfirmPassword = !_hideConfirmPassword;
-                              });
-                            },
-                          ),
-                        ),
-                        validator: (value) {
-                          if (value != _newPassword.text) {
-                            return 'Passwords do not match';
+                            return l.emailIsRequired;
                           }
                           return null;
                         },
@@ -189,7 +195,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                       const SizedBox(height: 25),
                       Center(
                         child: SizedBox(
-                          width: 200,
+                          width: double.infinity,
                           height: 50,
                           child: ElevatedButton(
                             style: ElevatedButton.styleFrom(
@@ -199,13 +205,22 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                                 borderRadius: BorderRadius.circular(12),
                               ),
                             ),
-                            onPressed: _resetPassword,
-                            child: const Text(
-                              'Reset Password',
-                              style: TextStyle(
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
+                            onPressed: _sending ? null : _resetPassword,
+                            child: _sending
+                                ? const SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: Colors.white,
+                                    ),
+                                  )
+                                : Text(
+                                    sendResetLink,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(fontWeight: FontWeight.w600),
+                                  ),
                           ),
                         ),
                       ),
@@ -215,6 +230,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
               ),
             ),
           ],
+        ),
         ),
       ),
     );

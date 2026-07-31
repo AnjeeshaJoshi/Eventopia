@@ -4,17 +4,19 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import 'package:qr_flutter/qr_flutter.dart';
+import 'package:ems_app/l10n/app_localizations.dart';
 
 import '../../models.dart';
 import '../../theme.dart';
 import '../../widgets.dart';
 
 class BookingConfirmedSheet extends StatelessWidget {
-  final Booking booking;
+  final BookingModel booking;
 
   const BookingConfirmedSheet({super.key, required this.booking});
 
   Future<void> _downloadTicketPdf(BuildContext context) async {
+    final l = AppLocalizations.of(context)!;
     try {
       final pdf = pw.Document();
 
@@ -90,7 +92,7 @@ class BookingConfirmedSheet extends StatelessWidget {
                       ['Discount', '- NPR ${booking.discount.toStringAsFixed(2)}'],
                     ['Total Paid', 'NPR ${booking.total.toStringAsFixed(2)}'],
                     ['Booked On', DateFormat('dd MMM yyyy').format(booking.createdAt)],
-                    ['Reference', booking.id.substring(0, 8).toUpperCase()],
+                    ['Reference', booking.bookingId.length >= 8 ? booking.bookingId.substring(0, 8).toUpperCase() : booking.bookingId.toUpperCase()],
                   ],
                 ),
 
@@ -137,12 +139,12 @@ class BookingConfirmedSheet extends StatelessWidget {
       // Use Printing.sharePdf which works reliably across platforms
       await Printing.sharePdf(
         bytes: bytes,
-        filename: 'eventopia_ticket_${booking.id.substring(0, 8)}.pdf',
+        filename: 'eventopia_ticket_${booking.bookingId.length >= 8 ? booking.bookingId.substring(0, 8) : booking.bookingId}.pdf',
       );
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to generate PDF: $e')),
+          SnackBar(content: Text(l.failedToGeneratePdf(e.toString()))),
         );
       }
     }
@@ -150,6 +152,8 @@ class BookingConfirmedSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
+
     return DraggableScrollableSheet(
       initialChildSize: .85,
       maxChildSize: .95,
@@ -188,12 +192,12 @@ class BookingConfirmedSheet extends StatelessWidget {
                         color: C.teal, size: 42),
                   ),
                   const SizedBox(height: 12),
-                  const Text('Ticket Confirmed!',
+                  Text(l.ticketConfirmed,
                       style:
-                          TextStyle(fontSize: 20, fontWeight: FontWeight.w700)),
+                          const TextStyle(fontSize: 20, fontWeight: FontWeight.w700)),
                   const SizedBox(height: 4),
-                  const Text('Show this QR code at entry',
-                      style: TextStyle(fontSize: 13, color: C.t2)),
+                  Text(l.showQrAtEntry,
+                      style: const TextStyle(fontSize: 13, color: C.t2)),
                 ],
               ),
             ),
@@ -233,29 +237,29 @@ class BookingConfirmedSheet extends StatelessWidget {
                 children: [
                   InfoRow(
                       icon: Icons.event_rounded,
-                      label: 'Event',
+                      label: l.event,
                       value: booking.eventTitle),
                   InfoRow(
                       icon: Icons.confirmation_number_rounded,
-                      label: 'Ticket',
+                      label: l.ticket,
                       value: '${booking.category.label} × ${booking.quantity}'),
                   InfoRow(
                       icon: Icons.event_seat_rounded,
-                      label: 'Section',
+                      label: l.section,
                       value: booking.category.section),
                   if (booking.discount > 0)
                     InfoRow(
                         icon: Icons.discount_rounded,
-                        label: 'Discount',
+                        label: l.discount,
                         value: '- NPR ${booking.discount.toStringAsFixed(2)}'),
                   InfoRow(
                       icon: Icons.payments_rounded,
-                      label: 'Total Paid',
+                      label: l.totalPaid,
                       value: 'NPR ${booking.total.toStringAsFixed(2)}'),
                   InfoRow(
                       icon: Icons.tag_rounded,
-                      label: 'Ref',
-                      value: booking.id.substring(0, 8).toUpperCase()),
+                      label: l.reference,
+                      value: booking.bookingId.length >= 8 ? booking.bookingId.substring(0, 8).toUpperCase() : booking.bookingId.toUpperCase()),
                 ],
               ),
             ),
@@ -265,16 +269,16 @@ class BookingConfirmedSheet extends StatelessWidget {
               children: [
                 Expanded(
                   child: GBtn(
-                    label: 'Ticket',
+                    label: l.ticket,
                     onTap: () => _downloadTicketPdf(context),
                     icon: Icons.download_rounded,
-                    gradient: const LinearGradient(colors: [C.sky, C.indigo]),
+                    gradient: C.gPrimary,
                   ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: GBtn(
-                    label: 'Done',
+                    label: l.done,
                     onTap: () {
                       Navigator.pushNamedAndRemoveUntil(
                         context,
@@ -282,8 +286,7 @@ class BookingConfirmedSheet extends StatelessWidget {
                         (route) => false,
                       );
                     },
-
-                    gradient: C.gTeal,
+                    gradient: C.gPrimary,
                   ),
                 ),
               ],

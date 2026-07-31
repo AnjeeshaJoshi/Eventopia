@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:ems_app/l10n/app_localizations.dart';
 import 'ticket_detail_sheet.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import '../../models.dart';
@@ -6,11 +7,13 @@ import '../../theme.dart';
 import '../../widgets.dart';
 
 class TicketCard extends StatelessWidget {
-  final Booking booking;
+  final BookingModel booking;
   const TicketCard({required this.booking});
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
+
     return GCard(
       onTap: () => showModalBottomSheet(
         context: context,
@@ -71,9 +74,9 @@ class TicketCard extends StatelessWidget {
                           borderRadius: BorderRadius.circular(6),
                           border: Border.all(color: C.rose.withOpacity(0.3)),
                         ),
-                        child: const Text(
-                          'Cancelled',
-                          style: TextStyle(
+                        child: Text(
+                          l.cancelled,
+                          style: const TextStyle(
                             fontSize: 10,
                             color: C.rose,
                             fontWeight: FontWeight.w600,

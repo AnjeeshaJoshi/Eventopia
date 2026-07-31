@@ -1,64 +1,82 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../auth/app_provider.dart';
+import 'package:ems_app/providers/auth_provider.dart';
+import 'package:ems_app/providers/event_provider.dart';
+import 'package:ems_app/providers/booking_provider.dart';
+import 'package:ems_app/l10n/app_localizations.dart';
 import '../../models.dart';
 import '../../theme.dart';
 import '../../widgets.dart';
 import 'event_detail_screen.dart';
+import 'notifications_screen.dart';
 
 class AttendeeHome extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final p = context.watch<AppProvider>();
-    if (p.current == null) {
+    final l = AppLocalizations.of(context)!;
+    final authProvider = context.watch<AuthProvider>();
+    final eventProvider = context.watch<EventProvider>();
+    final bookingProvider = context.watch<BookingProvider>();
+
+    if (authProvider.currentUser == null) {
       return const Scaffold(
         body: Center(child: CircularProgressIndicator()),
       );
     }
-    final user = p.current!;
-    final upcoming = p.events
+    final user = authProvider.currentUser!;
+    final upcoming = eventProvider.events
         .where((e) => e.status == EventStatus.upcoming)
-        .take(3)
         .toList();
+    final myBookings = bookingProvider.getMyBookings(user.uid);
+    final activeBookings = myBookings
+        .where((booking) => booking.status != BookingStatus.cancelled)
+        .toList();
+    final unreadNotifications = bookingProvider.unreadNotificationCount(user.uid);
 
     return Scaffold(
       body: CustomScrollView(
         slivers: [
         SliverAppBar(
-        expandedHeight: 130,
+        expandedHeight: 140,
         pinned: true,
         backgroundColor: Colors.transparent,
         actions: [
-          IconButton(
-            icon: const Icon(
-              Icons.logout_rounded,
-              color: Colors.white,
-            ),
-            onPressed: () {
-              Navigator.pushNamedAndRemoveUntil(
+          NotificationBell(
+            tooltip: l.notifications,
+            unreadCount: unreadNotifications,
+            onPressed: () => Navigator.push(
                 context,
-                '/login',
-                    (route) => false,
-              );
+                MaterialPageRoute(builder: (_) => const NotificationsScreen()),
+            ),
+          ),
+          Tooltip(
+            message: l.signOut,
+            child: IconButton(
+              icon: const Icon(
+                Icons.logout_rounded,
+                color: Colors.white,
+              ),
+              onPressed: () {
+                Navigator.pushNamedAndRemoveUntil(
+                  context,
+                  '/login',
+                      (route) => false,
+                );
 
-              Future.microtask(() {
-                p.logout();
-              });
-            },
+                Future.microtask(() async {
+                  try {
+                    await authProvider.logout();
+                  } catch (e) {
+                    // Handle error silently
+                  }
+                });
+              },
+            ),
           ),
         ],
         flexibleSpace: FlexibleSpaceBar(
           background: Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  C.rose,
-                  C.amber,
-                ],
-              ),
-            ),
+            decoration: const BoxDecoration(gradient: C.gPrimary),
             child: SafeArea(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(
@@ -70,15 +88,11 @@ class AttendeeHome extends StatelessWidget {
                 child: Align(
                   alignment: Alignment.bottomLeft,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
-                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                     child: Row(
-                      mainAxisSize: MainAxisSize.min,
                       children: [
                         Container(
-                          padding: const EdgeInsets.all(15),
+                          padding: const EdgeInsets.all(10),
                           decoration: BoxDecoration(
                             color: Colors.white.withOpacity(.2),
                             borderRadius: BorderRadius.circular(14),
@@ -92,13 +106,15 @@ class AttendeeHome extends StatelessWidget {
 
                         const SizedBox(width: 12),
 
-                        Column(
+                        Expanded(
+                          child: Column(
                           mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment:
-                          CrossAxisAlignment.start,
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              user.organization ?? 'Attendee',
+                              user.organization ?? l.attendee,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                               style: const TextStyle(
                                 fontSize: 12,
                                 color: Colors.white70,
@@ -107,21 +123,25 @@ class AttendeeHome extends StatelessWidget {
                             const SizedBox(height: 2),
                             Text(
                               user.name,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                               style: const TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.w700,
                                 color: Colors.white,
                               ),
                             ),
-                            const SizedBox(height: 1),
                             Text(
-                              'Discover. Connect. Celebrate.',
-                              style: TextStyle(
-                                fontSize: 10,
+                              user.email,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontSize: 12,
                                 color: Colors.white70,
                               ),
                             ),
                           ],
+                        ),
                         ),
                       ],
                     ),
@@ -145,8 +165,8 @@ class AttendeeHome extends StatelessWidget {
                     children: [
                       Expanded(
                         child: StatBox(
-                          label: 'My Bookings',
-                          value: '${p.myBookings.length}',
+                          label: l.myBookings,
+                          value: '${activeBookings.length}',
                           icon: Icons.confirmation_number_rounded,
                           color: C.teal,
                         ),
@@ -154,9 +174,9 @@ class AttendeeHome extends StatelessWidget {
                       const SizedBox(width: 12),
                       Expanded(
                         child: StatBox(
-                          label: 'Total Spent',
+                          label: l.totalSpent,
                           value:
-                              'NPR ${p.myBookings.fold<double>(0, (s, b) => s + b.total).toStringAsFixed(0)}',
+                              'NPR ${activeBookings.fold<double>(0, (sum, booking) => sum + booking.total).toStringAsFixed(0)}',
                           icon: Icons.payments_rounded,
                           color: C.amber,
                         ),
@@ -167,19 +187,19 @@ class AttendeeHome extends StatelessWidget {
                   const SizedBox(height: 32),
 
                   SectionTitle(
-                    title: 'Upcoming Events',
-                    action: 'See all',
+                    title: l.upcomingEvents,
+                    action: l.seeAll,
                     onAction: () {},
                   ),
                   const SizedBox(height: 16),
 
                   if (upcoming.isEmpty)
-                    const Center(
+                    Center(
                       child: Padding(
-                        padding: EdgeInsets.all(20.0),
+                        padding: const EdgeInsets.all(20.0),
                         child: Text(
-                          'No upcoming events.',
-                          style: TextStyle(color: C.t3),
+                          l.noUpcomingEvents,
+                          style: const TextStyle(color: C.t3),
                         ),
                       ),
                     )
@@ -202,7 +222,7 @@ class AttendeeHome extends StatelessWidget {
     );
   }
 
-  void _openBooking(BuildContext context, AppEvent event) {
+  void _openBooking(BuildContext context, EventModel event) {
     Navigator.push(
       context,
       MaterialPageRoute(builder: (_) => EventDetailScreen(event: event)),

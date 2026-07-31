@@ -5,13 +5,15 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
-import '../../auth/app_provider.dart';
+import 'package:ems_app/providers/auth_provider.dart';
+import 'package:ems_app/providers/event_provider.dart';
+import 'package:ems_app/l10n/app_localizations.dart';
 import '../../theme.dart';
 import '../../widgets.dart';
 import 'edit_event_sheet.dart';
 
 class EventDetailSheet extends StatelessWidget {
-  final AppEvent event;
+  final EventModel event;
 
   const EventDetailSheet({
     super.key,
@@ -20,6 +22,7 @@ class EventDetailSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     return DraggableScrollableSheet(
       initialChildSize: .75,
       minChildSize: .4,
@@ -48,19 +51,36 @@ class EventDetailSheet extends StatelessWidget {
                   child: Text(event.title,
                       style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700)),
                 ),
-                if (context.read<AppProvider>().current?.id == event.organizerId)
-                  IconButton(
-                    icon: const Icon(Icons.edit_rounded, color: C.violet),
-                    onPressed: () {
-                      Navigator.pop(context); // Close detail sheet
-                      showModalBottomSheet(
-                        context: context,
-                        isScrollControlled: true,
-                        backgroundColor: Colors.transparent,
-                        builder: (_) => EditEventSheet(event: event),
-                      );
-                    },
+                if (context.read<AuthProvider>().currentUser?.uid == event.organizerId) ...[
+                  Tooltip(
+                    message: l.editEvent,
+                    child: Semantics(
+                      label: l.editEvent,
+                      child: IconButton(
+                        icon: const Icon(Icons.edit_rounded, color: C.violet),
+                        onPressed: () {
+                          Navigator.pop(context);
+                          showModalBottomSheet(
+                            context: context,
+                            isScrollControlled: true,
+                            backgroundColor: Colors.transparent,
+                            builder: (_) => EditEventSheet(event: event),
+                          );
+                        },
+                      ),
+                    ),
                   ),
+                  Tooltip(
+                    message: l.deleteEvent,
+                    child: Semantics(
+                      label: l.deleteEvent,
+                      child: IconButton(
+                        icon: const Icon(Icons.delete_outline_rounded, color: C.rose),
+                        onPressed: () => _confirmDelete(context, l),
+                      ),
+                    ),
+                  ),
+                ],
               ],
             ),
             const SizedBox(height: 6),
@@ -70,21 +90,21 @@ class EventDetailSheet extends StatelessWidget {
             const Divider(color: C.border),
             InfoRow(
                 icon: Icons.calendar_today_rounded,
-                label: 'Date',
+                label: l.date,
                 value: DateFormat('EEE, MMM d, y').format(event.date)),
             InfoRow(
                 icon: Icons.access_time_rounded,
-                label: 'Time',
+                label: l.time,
                 value:
                     '${event.start.format(context)} – ${event.end.format(context)}'),
             InfoRow(
                 icon: Icons.event_seat_rounded,
-                label: 'Seats',
+                label: l.seats,
                 value: '${event.bookedSeats} / ${event.totalSeats}'),
             const Divider(color: C.border),
             const SizedBox(height: 12),
-            const Text('Ticket Types',
-                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+            Text(l.ticketTypes,
+                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
             const SizedBox(height: 8),
             ...event.ticketTypes.map((t) => Padding(
                   padding: const EdgeInsets.only(bottom: 8),
@@ -122,8 +142,8 @@ class EventDetailSheet extends StatelessWidget {
                 )),
             if (event.promoCodes.isNotEmpty) ...[
               const Divider(color: C.border),
-              const Text('Promo Codes',
-                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+              Text(l.promoCodes,
+                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
               const SizedBox(height: 8),
               ...event.promoCodes.map((p) => GCard(
                     padding: const EdgeInsets.symmetric(
@@ -164,5 +184,41 @@ class EventDetailSheet extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  Future<void> _confirmDelete(BuildContext context, AppLocalizations l) async {
+    final shouldDelete = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(l.deleteEvent),
+        content: Text(l.areYouSureDeleteEvent),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: Text(l.cancel),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            style: TextButton.styleFrom(foregroundColor: C.rose),
+            child: Text(l.delete),
+          ),
+        ],
+      ),
+    );
+    if (shouldDelete != true || !context.mounted) return;
+
+    try {
+      await context.read<EventProvider>().deleteEvent(event.eventId);
+      if (!context.mounted) return;
+      Navigator.pop(context);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l.deleteEvent)),
+      );
+    } catch (_) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Unable to delete the event. Please try again.')),
+      );
+    }
   }
 }

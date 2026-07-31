@@ -5,17 +5,19 @@ import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import 'package:provider/provider.dart';
 import 'package:qr_flutter/qr_flutter.dart';
+import 'package:ems_app/providers/booking_provider.dart';
+import 'package:ems_app/l10n/app_localizations.dart';
 
-import '../../auth/app_provider.dart';
 import '../../models.dart';
 import '../../theme.dart';
 import '../../widgets.dart';
 
 class TicketDetailSheet extends StatelessWidget {
-  final Booking booking;
+  final BookingModel booking;
   const TicketDetailSheet({required this.booking});
 
   Future<void> _downloadTicketPdf(BuildContext context) async {
+    final l = AppLocalizations.of(context)!;
     try {
       final pdf = pw.Document();
 
@@ -91,7 +93,7 @@ class TicketDetailSheet extends StatelessWidget {
                       ['Discount', '- NPR ${booking.discount.toStringAsFixed(2)}'],
                     ['Total Paid', 'NPR ${booking.total.toStringAsFixed(2)}'],
                     ['Booked On', DateFormat('dd MMM yyyy').format(booking.createdAt)],
-                    ['Reference', booking.id.substring(0, 8).toUpperCase()],
+                    ['Reference', booking.bookingId.length >= 8 ? booking.bookingId.substring(0, 8).toUpperCase() : booking.bookingId.toUpperCase()],
                   ],
                 ),
 
@@ -137,12 +139,12 @@ class TicketDetailSheet extends StatelessWidget {
 
       await Printing.sharePdf(
         bytes: bytes,
-        filename: 'eventopia_ticket_${booking.id.substring(0, 8)}.pdf',
+        filename: 'eventopia_ticket_${booking.bookingId.length >= 8 ? booking.bookingId.substring(0, 8) : booking.bookingId}.pdf',
       );
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to generate PDF: $e')),
+          SnackBar(content: Text(l.failedToGeneratePdf(e.toString()))),
         );
       }
     }
@@ -150,6 +152,8 @@ class TicketDetailSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
+
     return DraggableScrollableSheet(
       initialChildSize: .85,
       maxChildSize: .95,
@@ -207,25 +211,25 @@ class TicketDetailSheet extends StatelessWidget {
                 children: [
                   InfoRow(
                       icon: Icons.confirmation_number_rounded,
-                      label: 'Ticket Type',
+                      label: l.ticketType,
                       value:
                       '${booking.category.label} × ${booking.quantity}'),
                   InfoRow(
                       icon: Icons.event_seat_rounded,
-                      label: 'Section',
+                      label: l.section,
                       value: booking.category.section),
                   InfoRow(
                       icon: Icons.payments_rounded,
-                      label: 'Total Paid',
+                      label: l.totalPaid,
                       value: 'NPR ${booking.total.toStringAsFixed(2)}'),
                   InfoRow(
                       icon: Icons.calendar_today_rounded,
-                      label: 'Booked On',
+                      label: l.bookedOn,
                       value: DateFormat('dd MMM y').format(booking.createdAt)),
                   InfoRow(
                       icon: Icons.tag_rounded,
-                      label: 'Ref',
-                      value: booking.id.substring(0, 8).toUpperCase()),
+                      label: l.reference,
+                      value: booking.bookingId.length >= 8 ? booking.bookingId.substring(0, 8).toUpperCase() : booking.bookingId.toUpperCase()),
                 ],
               ),
             ),
@@ -233,10 +237,10 @@ class TicketDetailSheet extends StatelessWidget {
             const SizedBox(height: 24),
 
             GBtn(
-              label: 'Download Ticket',
+              label: l.downloadTicket,
               onTap: () => _downloadTicketPdf(context),
               icon: Icons.download_rounded,
-              gradient: const LinearGradient(colors: [C.sky, C.indigo]),
+              gradient: C.gPrimary,
             ),
 
             const SizedBox(height: 16),
@@ -250,14 +254,14 @@ class TicketDetailSheet extends StatelessWidget {
                   borderRadius: BorderRadius.circular(14),
                   border: Border.all(color: C.rose.withOpacity(0.3)),
                 ),
-                child: const Row(
+                child: Row(
                   children: [
-                    Icon(Icons.info_outline_rounded, color: C.rose),
-                    SizedBox(width: 10),
+                    const Icon(Icons.info_outline_rounded, color: C.rose),
+                    const SizedBox(width: 10),
                     Expanded(
                       child: Text(
-                        'This booking is cancelled. The refund has been done.',
-                        style: TextStyle(
+                        l.bookingCancelledRefunded,
+                        style: const TextStyle(
                           color: C.rose,
                           fontWeight: FontWeight.w500,
                           fontSize: 14,
@@ -268,26 +272,39 @@ class TicketDetailSheet extends StatelessWidget {
                 ),
               )
             else
-              OutlinedButton.icon(
-                onPressed: () {
-                  final cancelled = context
-                      .read<AppProvider>()
-                      .cancelBooking(booking.id);
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                    content: Text(cancelled
-                        ? 'Booking cancelled. The refund has been done.'
-                        : 'Cannot cancel — 7-day window has passed.'),
-                  ));
-                },
-                icon: const Icon(Icons.cancel_rounded, color: C.rose),
-                label: const Text('Cancel Booking',
-                    style: TextStyle(color: C.rose)),
-                style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: C.rose),
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14)),
+              Semantics(
+                label: l.cancelBooking,
+                child: OutlinedButton.icon(
+                  onPressed: () async {
+                    try {
+                      final result = await context
+                          .read<BookingProvider>()
+                          .cancelBooking(booking.bookingId);
+                      if (context.mounted) {
+                        Navigator.pop(context);
+                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                          content: Text(result
+                              ? l.bookingCancelledRefundedSuccess
+                              : l.cannotCancelWindowPassed),
+                        ));
+                      }
+                    } catch (e) {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                          content: Text(e.toString()),
+                        ));
+                      }
+                    }
+                  },
+                  icon: const Icon(Icons.cancel_rounded, color: C.rose),
+                  label: Text(l.cancelBooking,
+                      style: const TextStyle(color: C.rose)),
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: C.rose),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14)),
+                  ),
                 ),
               ),
           ],

@@ -3,8 +3,10 @@ import 'package:ems_app/attendee/widgets/soldout_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:ems_app/providers/auth_provider.dart';
+import 'package:ems_app/providers/booking_provider.dart';
+import 'package:ems_app/l10n/app_localizations.dart';
 
-import '../../auth/app_provider.dart';
 import '../../models.dart';
 import '../../theme.dart';
 import '../../widgets.dart';
@@ -12,7 +14,7 @@ import '../screens/payment_gateway_screen.dart';
 import 'booking_confirmed_sheet.dart';
 
 class BookingSheet extends StatefulWidget {
-  final AppEvent event;
+  final EventModel event;
   final TicketCategory? preSelectedCategory;
   final int? preSelectedQuantity;
   final List<String> preSelectedSeatIds;
@@ -52,7 +54,7 @@ class _BookingSheetState extends State<BookingSheet> {
     super.dispose();
   }
 
-  AppEvent get _event => widget.event;
+  EventModel get _event => widget.event;
 
   List<TicketType> get _available =>
       _event.ticketTypes.where((t) => t.available).toList();
@@ -71,6 +73,7 @@ class _BookingSheetState extends State<BookingSheet> {
   double get _total => _subtotal - _discount;
 
   void _applyPromo() {
+    final l = AppLocalizations.of(context)!;
     final code = _promoCtrl.text.trim().toUpperCase();
     if (code.isEmpty) return;
     try {
@@ -80,13 +83,12 @@ class _BookingSheetState extends State<BookingSheet> {
           (_cat == null || p.forCategories.contains(_cat)));
       setState(() {
         _promoError = null;
-        _promoSuccess =
-            'Code applied! ${promo.discountPct.toStringAsFixed(0)}% discount';
+        _promoSuccess = l.promoApplied(promo.discountPct.toString());
         _discountPct = promo.discountPct;
       });
     } catch (_) {
       setState(() {
-        _promoError = 'Invalid or expired code';
+        _promoError = l.invalidPromoCode;
         _promoSuccess = null;
         _discountPct = 0;
       });
@@ -95,9 +97,10 @@ class _BookingSheetState extends State<BookingSheet> {
 
   Future<void> _proceedToPayment() async {
     if (_cat == null) return;
+    final l = AppLocalizations.of(context)!;
 
-    // Navigate to payment gateway with the final total (after discount)
-    Navigator.push(
+    // Navigate to payment with the final total (after discount)
+    final booking = await Navigator.push<BookingModel>(
       context,
       MaterialPageRoute(
         builder: (_) => PaymentGatewayScreen(
@@ -108,40 +111,59 @@ class _BookingSheetState extends State<BookingSheet> {
           eventTitle: _event.title,
           category: _cat!,
           quantity: _qty,
-          onPaymentSuccess: () {
+          onPaymentSuccess: () async {
             // Process actual booking upon successful payment
-            final booking = context.read<AppProvider>().book(
-              eventId: _event.id,
-              category: _cat!,
-              quantity: _qty,
-              promoCode:
-                  _promoCtrl.text.trim().isEmpty ? null : _promoCtrl.text.trim(),
-              seatIds: widget.preSelectedSeatIds,
-            );
-
-            if (booking == null) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Booking failed. Please try again.')),
+            try {
+              final attendee = context.read<AuthProvider>().currentUser;
+              if (attendee == null) {
+                throw StateError('Please sign in before booking a ticket.');
+              }
+              final booking = await context.read<BookingProvider>().createBooking(
+                eventId: _event.eventId,
+                category: _cat!,
+                quantity: _qty,
+                promoCode:
+                    _promoCtrl.text.trim().isEmpty ? null : _promoCtrl.text.trim(),
+                seatIds: widget.preSelectedSeatIds,
+                userId: attendee.uid,
+                attendeeName: attendee.name,
               );
-              return;
+
+              if (!mounted) return null;
+
+              if (booking == null) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text(l.bookingFailed)),
+                );
+                return null;
+              }
+              return booking;
+            } catch (e) {
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('${l.bookingFailed}: $e')),
+                );
+              }
+              return null;
             }
-
-            Navigator.pop(context); // Close the booking sheet
-
-            showModalBottomSheet(
-              context: context,
-              isScrollControlled: true,
-              backgroundColor: Colors.transparent,
-              builder: (_) => BookingConfirmedSheet(booking: booking),
-            );
           },
         ),
       ),
+    );
+
+    if (!mounted || booking == null) return;
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => BookingConfirmedSheet(booking: booking),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
+
     if (_event.isSoldOut) {
       return SoldOutSheet(event: _event);
     }
@@ -188,9 +210,9 @@ class _BookingSheetState extends State<BookingSheet> {
             const SizedBox(height: 20),
 
             // Select category
-            const Text('Select Ticket Type',
+            Text(l.selectTicketType,
                 style:
-                TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
             const SizedBox(height: 10),
 
             ..._available.map((type) {
@@ -260,7 +282,8 @@ class _BookingSheetState extends State<BookingSheet> {
                                   : C.t1,
                             ),
                           ),
-                          Text('${type.remaining} left',
+                          Text(
+                              l.countLeft(type.remaining.toString()),
                               style: const TextStyle(
                                   fontSize: 10, color: C.t3)),
                         ],
@@ -276,8 +299,8 @@ class _BookingSheetState extends State<BookingSheet> {
             // Quantity
             Row(
               children: [
-                const Text('Quantity',
-                    style: TextStyle(
+                Text(l.quantity,
+                    style: const TextStyle(
                         fontSize: 14, fontWeight: FontWeight.w600)),
                 const Spacer(),
                 QtyButton(
@@ -310,18 +333,18 @@ class _BookingSheetState extends State<BookingSheet> {
               children: [
                 Expanded(
                   child: AppField(
-                    label: 'Promo Code (optional)',
+                    label: l.promoCodes,
                     controller: _promoCtrl,
                     prefix: Icons.discount_outlined,
                   ),
                 ),
                 const SizedBox(width: 10),
                 GBtn(
-                  label: 'Apply',
+                  label: l.apply,
                   width: 90,
                   height: 50,
                   onTap: _applyPromo,
-                  gradient: C.gTeal,
+                  gradient:  C.gPrimary
                 ),
               ],
             ),
@@ -346,8 +369,8 @@ class _BookingSheetState extends State<BookingSheet> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text('Subtotal',
-                    style: TextStyle(fontSize: 13, color: C.t2)),
+                Text(l.subtotal,
+                    style: const TextStyle(fontSize: 13, color: C.t2)),
                 Text('NPR ${_subtotal.toStringAsFixed(2)}',
                     style: const TextStyle(
                         fontSize: 13, fontWeight: FontWeight.w600)),
@@ -359,7 +382,7 @@ class _BookingSheetState extends State<BookingSheet> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'Discount (${_discountPct.toStringAsFixed(0)}%)',
+                    '${l.discount} (${_discountPct.toStringAsFixed(0)}%)',
                     style: const TextStyle(fontSize: 13, color: C.teal),
                   ),
                   Text('- NPR ${_discount.toStringAsFixed(2)}',
@@ -381,8 +404,8 @@ class _BookingSheetState extends State<BookingSheet> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text('Total',
-                      style: TextStyle(
+                  Text(l.total,
+                      style: const TextStyle(
                           fontSize: 16, fontWeight: FontWeight.w700)),
                   Text('NPR ${_total.toStringAsFixed(2)}',
                       style: const TextStyle(
@@ -397,8 +420,8 @@ class _BookingSheetState extends State<BookingSheet> {
             Padding(padding: const EdgeInsets.symmetric(horizontal: 50),
             child: GBtn(
               label: _cat == null
-                  ? 'Select a ticket type'
-                  : 'Proceed to pay',
+                  ? l.selectTicketType
+                  : l.proceedToPay,
               onTap: _cat != null ? _proceedToPayment : null,
               loading: _loading,
               gradient: C.gPrimary,

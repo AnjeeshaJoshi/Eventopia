@@ -1,4 +1,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Firebase Auth, Firestore, and Storage need network access in every
+         build type. Debug/profile declare this too, but release uses this
+         manifest only. -->
+    <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.CAMERA" />
     <application
         android:label="eventopia"

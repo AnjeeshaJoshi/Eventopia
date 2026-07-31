@@ -1,0 +1,27 @@
+{
+  "firestore": { "rules": "firestore.rules" },
+  "storage": { "rules": "storage.rules" },
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "eventopia-76f01",
+          "appId": "1:180301204443:android:3fd6776f8d5cd3b7e275fe",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "eventopia-76f01",
+          "configurations": {
+            "android": "1:180301204443:android:3fd6776f8d5cd3b7e275fe",
+            "ios": "1:180301204443:ios:d4071452d324debce275fe",
+            "macos": "1:180301204443:ios:d4071452d324debce275fe",
+            "web": "1:180301204443:web:d029b9a7e7b6694de275fe",
+            "windows": "1:180301204443:web:d9c3f69a136015d0e275fe"
+          }
+        }
+      }
+    }
+  }
+}

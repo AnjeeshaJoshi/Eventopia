@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-
-import '../../auth/app_provider.dart';
+import 'package:ems_app/providers/event_provider.dart';
+import 'package:ems_app/l10n/app_localizations.dart';
 import '../../theme.dart';
 import '../../widgets.dart';
 import 'event_detail_screen.dart';
@@ -16,7 +16,8 @@ class EventBrowserState extends State<EventBrowser> {
 
   @override
   Widget build(BuildContext context) {
-    final all = context.watch<AppProvider>().events;
+    final l = AppLocalizations.of(context)!;
+    final all = context.watch<EventProvider>().events;
     final filtered = _query.isEmpty
         ? all
         : all
@@ -26,7 +27,7 @@ class EventBrowserState extends State<EventBrowser> {
         .toList();
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Explore Events')),
+      appBar: AppBar(title: Text(l.exploreEvents)),
       body: Column(
         children: [
           Padding(
@@ -35,7 +36,7 @@ class EventBrowserState extends State<EventBrowser> {
               onChanged: (v) => setState(() => _query = v),
               style: const TextStyle(fontSize: 14, color: C.t1),
               decoration: InputDecoration(
-                hintText: 'Search events…',
+                hintText: l.searchEvents,
                 prefixIcon:
                 const Icon(Icons.search_rounded, color: C.t3, size: 20),
                 suffixIcon: _query.isNotEmpty
@@ -50,9 +51,9 @@ class EventBrowserState extends State<EventBrowser> {
           ),
           Expanded(
             child: filtered.isEmpty
-                ? const Center(
-                child: Text('No events match your search.',
-                    style: TextStyle(color: C.t2)))
+                ? Center(
+                child: Text(l.noEventsMatchSearch,
+                    style: const TextStyle(color: C.t2)))
                 : ListView.builder(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               itemCount: filtered.length,

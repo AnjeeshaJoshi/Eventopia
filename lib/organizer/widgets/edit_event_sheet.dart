@@ -1,17 +1,18 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
-import '../../auth/app_provider.dart';
+import 'package:ems_app/providers/event_provider.dart';
+import 'package:ems_app/l10n/app_localizations.dart';
 import '../../models.dart';
 import '../../theme.dart';
 import '../../widgets.dart';
+import 'event_poster_picker.dart';
 
 class EditEventSheet extends StatefulWidget {
-  final AppEvent event;
+  final EventModel event;
 
   const EditEventSheet({super.key, required this.event});
 
@@ -33,6 +34,7 @@ class _EditEventSheetState extends State<EditEventSheet> {
 
   // Poster image
   String? _posterPath;
+  bool _removePoster = false;
 
   late final Map<TicketCategory, TextEditingController> _prices;
   late final Map<TicketCategory, TextEditingController> _caps;
@@ -44,7 +46,7 @@ class _EditEventSheetState extends State<EditEventSheet> {
     super.initState();
     _title = TextEditingController(text: widget.event.title);
     _desc = TextEditingController(text: widget.event.description);
-    _location = TextEditingController(text: widget.event.location);
+    _location = TextEditingController(text: widget.event.venue);
     
     final existingPromo = widget.event.promoCodes.isNotEmpty ? widget.event.promoCodes.first : null;
     _promoCode = TextEditingController(text: existingPromo?.code ?? '');
@@ -53,7 +55,7 @@ class _EditEventSheetState extends State<EditEventSheet> {
     _date = widget.event.date;
     _start = widget.event.start;
     _end = widget.event.end;
-    _posterPath = widget.event.posterPath;
+    _posterPath = widget.event.image;
 
     _prices = {};
     _caps = {};
@@ -78,70 +80,97 @@ class _EditEventSheetState extends State<EditEventSheet> {
   }
 
   Future<void> _pickPoster() async {
-    final picker = ImagePicker();
-    final picked = await picker.pickImage(
-      source: ImageSource.gallery,
-      maxWidth: 1200,
-      maxHeight: 800,
-      imageQuality: 85,
+    final poster = await showEventPosterPicker(
+      context,
+      selectedPoster: _posterPath,
     );
-    if (picked != null) {
-      setState(() => _posterPath = picked.path);
+    if (poster != null && mounted) {
+      setState(() {
+        _posterPath = poster;
+        _removePoster = false;
+      });
     }
   }
 
   Future<void> _update() async {
     if (!_form.currentState!.validate()) return;
     setState(() => _loading = true);
-    await Future.delayed(const Duration(milliseconds: 600));
+    
+    try {
+      await Future.delayed(const Duration(milliseconds: 600));
 
-    final types = TicketCategory.values.map((cat) {
-      final matches = widget.event.ticketTypes.where((t) => t.category == cat);
-      final oldType = matches.isEmpty ? null : matches.first;
-      final price = double.tryParse(_prices[cat]!.text) ?? cat.defaultPrice;
-      final cap = int.tryParse(_caps[cat]!.text) ?? 50;
-      
-      return TicketType(
-        id: oldType?.id ?? (DateTime.now().millisecondsSinceEpoch.toString() + cat.name),
-        category: cat,
-        price: price,
-        capacity: cap,
-        sold: oldType?.sold ?? 0,
-      );
-    }).toList();
+      final types = TicketCategory.values.map((cat) {
+        final matches = widget.event.ticketTypes.where((t) => t.category == cat);
+        final oldType = matches.isEmpty ? null : matches.first;
+        final price = double.tryParse(_prices[cat]!.text) ?? cat.defaultPrice;
+        final cap = int.tryParse(_caps[cat]!.text) ?? 50;
+        
+        return TicketType(
+          id: oldType?.id ?? (DateTime.now().millisecondsSinceEpoch.toString() + cat.name),
+          category: cat,
+          price: price,
+          capacity: cap,
+          sold: oldType?.sold ?? 0,
+        );
+      }).toList();
 
-    final promoCodeStr = _promoCode.text.trim();
-    final promoDiscountStr = _promoDiscount.text.trim();
-    final promoCodes = <PromoCode>[];
-    if (promoCodeStr.isNotEmpty && promoDiscountStr.isNotEmpty) {
-      final discount = double.tryParse(promoDiscountStr) ?? 0;
-      if (discount > 0) {
-        promoCodes.add(PromoCode(
-          code: promoCodeStr,
-          discountPct: discount,
-          expiry: _date,
-          forCategories: TicketCategory.values,
-        ));
+      final promoCodeStr = _promoCode.text.trim();
+      final promoDiscountStr = _promoDiscount.text.trim();
+      final promoCodes = <PromoCode>[];
+      if (promoCodeStr.isNotEmpty && promoDiscountStr.isNotEmpty) {
+        final discount = double.tryParse(promoDiscountStr) ?? 0;
+        if (discount > 0) {
+          promoCodes.add(PromoCode(
+            code: promoCodeStr,
+            discountPct: discount,
+            expiry: _date,
+            forCategories: TicketCategory.values,
+          ));
+        }
+      }
+
+      final eventProvider = context.read<EventProvider>();
+      await eventProvider.editEvent(
+        eventId: widget.event.eventId,
+            title: _title.text.trim(),
+            description: _desc.text.trim(),
+            location: _location.text.trim(),
+            date: _date,
+            start: _start,
+            end: _end,
+            ticketTypes: types,
+            promoCodes: promoCodes,
+            imagePath: _posterPath,
+            removeImage: _removePoster,
+          );
+
+      if (mounted) {
+        final messenger = ScaffoldMessenger.of(context);
+        final message = eventProvider.warning ?? 'Event updated successfully.';
+        Navigator.pop(context);
+        messenger.showSnackBar(
+          SnackBar(
+            content: Text(message),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.toString())),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _loading = false);
       }
     }
-
-    context.read<AppProvider>().editEvent(
-          id: widget.event.id,
-          title: _title.text.trim(),
-          description: _desc.text.trim(),
-          location: _location.text.trim(),
-          date: _date,
-          start: _start,
-          end: _end,
-          ticketTypes: types,
-          posterPath: _posterPath,
-        );
-
-    if (mounted) Navigator.pop(context);
   }
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     return DraggableScrollableSheet(
       initialChildSize: .9,
       minChildSize: .5,
@@ -167,114 +196,128 @@ class _EditEventSheetState extends State<EditEventSheet> {
                       color: C.border, borderRadius: BorderRadius.circular(2)),
                 ),
               ),
-              const Text('Edit Event',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+              Text(l.editEvent,
+                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
               const SizedBox(height: 16),
 
               // ── Poster Image Picker ──────────────────────────────────
-              const Text('Event Poster',
-                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+              Text(l.eventPoster,
+                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
               const SizedBox(height: 8),
-              GestureDetector(
-                onTap: _pickPoster,
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 250),
-                  height: 160,
-                  decoration: BoxDecoration(
-                    color: C.violet.withOpacity(0.05),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: _posterPath != null
-                          ? C.violet.withOpacity(0.4)
-                          : C.border,
-                      width: _posterPath != null ? 1.5 : 1,
+              Semantics(
+                label: l.eventPoster,
+                child: GestureDetector(
+                  onTap: _pickPoster,
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 250),
+                    height: 160,
+                    decoration: BoxDecoration(
+                      color: C.violet.withOpacity(0.05),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: _posterPath != null
+                            ? C.violet.withOpacity(0.4)
+                            : C.border,
+                        width: _posterPath != null ? 1.5 : 1,
+                      ),
                     ),
-                  ),
-                  clipBehavior: Clip.antiAlias,
-                  child: _posterPath != null
-                      ? Stack(
-                          fit: StackFit.expand,
-                          children: [
-                            _posterPath!.startsWith('assets/')
-                                ? Image.asset(
-                                    _posterPath ?? 'assets/images/expo.jpg',
-                                    fit: BoxFit.cover,
-                                  )
-                                : Image.file(
-                                    File(_posterPath!),
-                                    fit: BoxFit.cover,
+                    clipBehavior: Clip.antiAlias,
+                    child: _posterPath != null
+                        ? Stack(
+                            fit: StackFit.expand,
+                            children: [
+                              _posterPath!.startsWith('http')
+                                  ? Image.network(
+                                      _posterPath!,
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (_, __, ___) =>
+                                          const ColoredBox(color: C.card),
+                                    )
+                                  : _posterPath!.startsWith('assets/')
+                                  ? Image.asset(
+                                      _posterPath ?? 'assets/images/expo.jpg',
+                                      fit: BoxFit.cover,
+                                    )
+                                  : _posterPath!.startsWith('gs://')
+                                  ? const ColoredBox(color: C.card)
+                                  : Image.file(
+                                      File(_posterPath!),
+                                      fit: BoxFit.cover,
+                                    ),
+                              Container(
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    begin: Alignment.topCenter,
+                                    end: Alignment.bottomCenter,
+                                    colors: [
+                                      Colors.black.withOpacity(0.0),
+                                      Colors.black.withOpacity(0.3),
+                                    ],
                                   ),
-                            Container(
-                              decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  begin: Alignment.topCenter,
-                                  end: Alignment.bottomCenter,
-                                  colors: [
-                                    Colors.black.withOpacity(0.0),
-                                    Colors.black.withOpacity(0.3),
+                                ),
+                              ),
+                              Positioned(
+                                bottom: 8,
+                                right: 8,
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    _actionChip(
+                                      icon: Icons.edit_rounded,
+                                      label: 'Change',
+                                      onTap: _pickPoster,
+                                    ),
+                                    const SizedBox(width: 6),
+                                    _actionChip(
+                                      icon: Icons.close_rounded,
+                                      label: 'Remove',
+                                      onTap: () => setState(() {
+                                        _posterPath = null;
+                                        _removePoster = true;
+                                      }),
+                                    ),
                                   ],
                                 ),
                               ),
-                            ),
-                            Positioned(
-                              bottom: 8,
-                              right: 8,
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  _actionChip(
-                                    icon: Icons.edit_rounded,
-                                    label: 'Change',
-                                    onTap: _pickPoster,
-                                  ),
-                                  const SizedBox(width: 6),
-                                  _actionChip(
-                                    icon: Icons.close_rounded,
-                                    label: 'Remove',
-                                    onTap: () =>
-                                        setState(() => _posterPath = null),
-                                  ),
-                                ],
+                            ],
+                          )
+                        : Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.add_photo_alternate_rounded,
+                                  size: 40,
+                                  color: C.violet.withOpacity(0.4)),
+                              const SizedBox(height: 8),
+                              Text(
+                                l.tapToAddEventPoster,
+                                style: const TextStyle(
+                                  fontSize: 13,
+                                  color: C.t3,
+                                  fontWeight: FontWeight.w500,
+                                ),
                               ),
-                            ),
-                          ],
-                        )
-                      : Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.add_photo_alternate_rounded,
-                                size: 40,
-                                color: C.violet.withOpacity(0.4)),
-                            const SizedBox(height: 8),
-                            Text(
-                              'Tap to add event poster',
-                              style: TextStyle(
-                                fontSize: 13,
-                                color: C.t3,
-                                fontWeight: FontWeight.w500,
+                              const SizedBox(height: 2),
+                              Text(
+                                l.recommendedPosterSize,
+                                style: TextStyle(fontSize: 10, color: C.t3.withOpacity(0.7)),
                               ),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              'Recommended: 1200 × 800 px',
-                              style: TextStyle(fontSize: 10, color: C.t3.withOpacity(0.7)),
-                            ),
-                          ],
-                        ),
+                            ],
+                          ),
+                  ),
                 ),
               ),
 
               const SizedBox(height: 14),
 
               AppField(
-                label: 'Event Title',
+                label: l.eventTitle,
                 controller: _title,
                 prefix: Icons.title_rounded,
                 validator: (v) => v?.trim().isEmpty == true ? 'Required' : null,
               ),
               const SizedBox(height: 14),
               AppField(
-                label: 'Description',
+                label: l.description,
                 controller: _desc,
                 prefix: Icons.description_outlined,
                 maxLines: 3,
@@ -282,7 +325,7 @@ class _EditEventSheetState extends State<EditEventSheet> {
               ),
               const SizedBox(height: 14),
               AppField(
-                label: 'Location',
+                label: l.location,
                 controller: _location,
                 prefix: Icons.location_on_outlined,
                 validator: (v) => v?.trim().isEmpty == true ? 'Required' : null,
@@ -296,7 +339,7 @@ class _EditEventSheetState extends State<EditEventSheet> {
                     child: GCard(
                       padding: const EdgeInsets.all(14),
                       onTap: () async {
-                        final prov = context.read<AppProvider>();
+                        final prov = context.read<EventProvider>();
                         final d = await showDatePicker(
                           context: context,
                           initialDate: _date,
@@ -305,7 +348,7 @@ class _EditEventSheetState extends State<EditEventSheet> {
                               DateTime.now().add(const Duration(days: 365)),
                           selectableDayPredicate: (day) {
                             return !prov.events.any((e) =>
-                                e.id != widget.event.id && // exclude current event
+                                e.eventId != widget.event.eventId && // exclude current event
                                 e.status == EventStatus.ongoing &&
                                 e.date.year == day.year &&
                                 e.date.month == day.month &&
@@ -317,8 +360,8 @@ class _EditEventSheetState extends State<EditEventSheet> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text('Date',
-                              style: TextStyle(fontSize: 11, color: C.t3)),
+                          Text(l.date,
+                              style: const TextStyle(fontSize: 11, color: C.t3)),
                           const SizedBox(height: 4),
                           Text(DateFormat('MMM d, y').format(_date),
                               style: const TextStyle(
@@ -339,8 +382,8 @@ class _EditEventSheetState extends State<EditEventSheet> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text('Start',
-                              style: TextStyle(fontSize: 11, color: C.t3)),
+                          Text(l.start,
+                              style: const TextStyle(fontSize: 11, color: C.t3)),
                           const SizedBox(height: 4),
                           Text(_start.format(context),
                               style: const TextStyle(
@@ -361,8 +404,8 @@ class _EditEventSheetState extends State<EditEventSheet> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text('End',
-                              style: TextStyle(fontSize: 11, color: C.t3)),
+                          Text(l.end,
+                              style: const TextStyle(fontSize: 11, color: C.t3)),
                           const SizedBox(height: 4),
                           Text(_end.format(context),
                               style: const TextStyle(
@@ -375,8 +418,8 @@ class _EditEventSheetState extends State<EditEventSheet> {
               ),
 
               const SizedBox(height: 20),
-              const Text('Ticket Categories',
-                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+              Text(l.ticketCategories,
+                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
               const SizedBox(height: 12),
 
               ...TicketCategory.values.map((cat) => Container(
@@ -420,7 +463,7 @@ class _EditEventSheetState extends State<EditEventSheet> {
                                 style:
                                     const TextStyle(fontSize: 13, color: C.t1),
                                 decoration: InputDecoration(
-                                  labelText: 'Price (NPR)',
+                                  labelText: l.priceNpr,
                                   contentPadding: const EdgeInsets.symmetric(
                                       horizontal: 12, vertical: 10),
                                   border: OutlineInputBorder(
@@ -442,7 +485,7 @@ class _EditEventSheetState extends State<EditEventSheet> {
                                 style:
                                     const TextStyle(fontSize: 13, color: C.t1),
                                 decoration: InputDecoration(
-                                  labelText: 'Capacity',
+                                  labelText: l.capacity,
                                   contentPadding: const EdgeInsets.symmetric(
                                       horizontal: 12, vertical: 10),
                                   border: OutlineInputBorder(
@@ -470,15 +513,15 @@ class _EditEventSheetState extends State<EditEventSheet> {
                   )),
 
               const SizedBox(height: 20),
-              const Text('Promo Code (Optional)',
-                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+              Text(l.promoCodeOptional,
+                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
               const SizedBox(height: 12),
               Row(
                 children: [
                   Expanded(
                     flex: 2,
                     child: AppField(
-                      label: 'Code (e.g. SAVE20)',
+                      label: l.promoCodeOptional,
                       controller: _promoCode,
                       prefix: Icons.local_offer_outlined,
                     ),
@@ -487,7 +530,7 @@ class _EditEventSheetState extends State<EditEventSheet> {
                   Expanded(
                     flex: 1,
                     child: AppField(
-                      label: 'Discount %',
+                      label: l.discountPercentage,
                       controller: _promoDiscount,
                       keyboard: TextInputType.number,
                     ),
@@ -498,7 +541,7 @@ class _EditEventSheetState extends State<EditEventSheet> {
               const SizedBox(height: 20),
               Padding(padding: const EdgeInsets.symmetric(horizontal: 50),
               child: GBtn(
-                label: 'Save Changes',
+                label: l.saveChanges,
                 onTap: _update,
                 loading: _loading,
                 icon: Icons.save_rounded,

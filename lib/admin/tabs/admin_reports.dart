@@ -5,8 +5,9 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import 'package:provider/provider.dart';
+import 'package:ems_app/l10n/app_localizations.dart';
 
-import '../../auth/app_provider.dart';
+import 'package:ems_app/providers/event_provider.dart';
 import '../../models.dart';
 import '../../theme.dart';
 import '../../widgets.dart';
@@ -21,7 +22,7 @@ class AdminReports extends StatefulWidget {
 class _AdminReportsState extends State<AdminReports> {
   String? _selectedEventId;
 
-  Future<void> _downloadReportPdf(AppEvent event, Map<TicketCategory, int> byCategory, double totalRevenue) async {
+  Future<void> _downloadReportPdf(EventModel event, Map<TicketCategory, int> byCategory, double totalRevenue, AppLocalizations l) async {
     try {
       final pdf = pw.Document();
 
@@ -56,7 +57,7 @@ class _AdminReportsState extends State<AdminReports> {
                     pw.Text('Name: ${event.title}', style: const pw.TextStyle(fontSize: 14)),
                     pw.Text('Date: ${DateFormat('MMMM dd, yyyy').format(event.date)}', style: const pw.TextStyle(fontSize: 14)),
                     pw.Text('Organizer: ${event.organizerName}', style: const pw.TextStyle(fontSize: 14)),
-                    pw.Text('Location: ${event.location}', style: const pw.TextStyle(fontSize: 14)),
+                    pw.Text('Location: ${event.venue}', style: const pw.TextStyle(fontSize: 14)),
                   ],
                 ),
               ),
@@ -114,11 +115,11 @@ class _AdminReportsState extends State<AdminReports> {
       );
 
       final bytes = await pdf.save();
-      await Printing.sharePdf(bytes: bytes, filename: 'report_${event.id.length >= 8 ? event.id.substring(0, 8) : event.id}.pdf');
+      await Printing.sharePdf(bytes: bytes, filename: 'report_${event.eventId.length >= 8 ? event.eventId.substring(0, 8) : event.eventId}.pdf');
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to generate PDF: $e')),
+          SnackBar(content: Text(l.failedToGeneratePdf(e.toString()))),
         );
       }
     }
@@ -126,28 +127,29 @@ class _AdminReportsState extends State<AdminReports> {
 
   @override
   Widget build(BuildContext context) {
-    final p = context.watch<AppProvider>();
-    final allEvents = p.events;
+    final eventProvider = context.watch<EventProvider>();
+    final allEvents = eventProvider.events;
+    final l = AppLocalizations.of(context)!;
 
     if (allEvents.isEmpty) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Reports & Analytics')),
-        body: const Center(
+        appBar: AppBar(title: Text(l.reportsAndAnalytics)),
+        body: Center(
           child: Text(
-            'No events available to show analytics.',
-            style: TextStyle(color: C.t2),
+            l.noEventsToShowAnalytics,
+            style: const TextStyle(color: C.t2),
           ),
         ),
       );
     }
 
     // Default to the first event if none selected
-    if (_selectedEventId == null || !allEvents.any((e) => e.id == _selectedEventId)) {
-      _selectedEventId = allEvents.first.id;
+    if (_selectedEventId == null || !allEvents.any((e) => e.eventId == _selectedEventId)) {
+      _selectedEventId = allEvents.first.eventId;
     }
 
-    final data = p.analytics(_selectedEventId!);
-    final event = data['event'] as AppEvent;
+    final data = eventProvider.analytics(_selectedEventId!);
+    final event = data['event'] as EventModel;
     final daily = (data['daily'] as List<DailySales>);
     final byCategory = data['byCategory'] as Map<TicketCategory, int>;
 
@@ -159,12 +161,18 @@ class _AdminReportsState extends State<AdminReports> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Reports & Analytics'),
+        title: Text(l.reportsAndAnalytics),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.download_rounded),
-            onPressed: () => _downloadReportPdf(event, byCategory, totalRevenue),
-            tooltip: 'Download PDF Report',
+          Tooltip(
+            message: l.downloadPdfReport,
+            child: Semantics(
+              button: true,
+              label: l.downloadPdfReport,
+              child: IconButton(
+                icon: const Icon(Icons.download_rounded),
+                onPressed: () => _downloadReportPdf(event, byCategory, totalRevenue, l),
+              ),
+            ),
           ),
         ],
       ),
@@ -178,7 +186,7 @@ class _AdminReportsState extends State<AdminReports> {
               value: _selectedEventId,
               dropdownColor: C.card,
               decoration: InputDecoration(
-                labelText: 'Select Event',
+                labelText: l.selectEvent,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(14),
                   borderSide: const BorderSide(color: C.border),
@@ -187,7 +195,7 @@ class _AdminReportsState extends State<AdminReports> {
               isExpanded: true,
               items: allEvents.map((e) {
                 return DropdownMenuItem(
-                  value: e.id,
+                  value: e.eventId,
                   child: Text(e.title, overflow: TextOverflow.ellipsis),
                 );
               }).toList(),
@@ -209,26 +217,26 @@ class _AdminReportsState extends State<AdminReports> {
               childAspectRatio: 1.3,
               children: [
                 StatBox(
-                  label: 'Tickets Sold',
+                  label: l.ticketsSold,
                   value: '${event.bookedSeats}',
                   icon: Icons.confirmation_number_rounded,
                   color: C.teal,
-                  sub: 'of ${event.totalSeats} total',
+                  sub: l.ofTotalSeats(event.totalSeats.toString()),
                 ),
                 StatBox(
-                  label: 'Revenue',
+                  label: l.revenue,
                   value: 'NPR ${NumberFormat.compact().format(totalRevenue)}',
                   icon: Icons.payments_rounded,
                   color: C.amber,
                 ),
                 StatBox(
-                  label: 'Occupancy',
+                  label: l.occupancy,
                   value: '${(event.occupancyRate * 100).toStringAsFixed(0)}%',
                   icon: Icons.event_seat_rounded,
                   color: event.occupancyRate > .8 ? C.rose : C.violet,
                 ),
                 StatBox(
-                  label: 'Available',
+                  label: l.available,
                   value: '${event.availableSeats}',
                   icon: Icons.chair_rounded,
                   color: C.sky,
@@ -242,9 +250,9 @@ class _AdminReportsState extends State<AdminReports> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    '7-Day Revenue',
-                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                  Text(
+                    l.sevenDayRevenue,
+                    style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
                   ),
                   const SizedBox(height: 20),
                   SizedBox(
@@ -321,9 +329,9 @@ class _AdminReportsState extends State<AdminReports> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'Sales by Category',
-                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                  Text(
+                    l.salesByCategory,
+                    style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
                   ),
                   const SizedBox(height: 16),
                   ...TicketCategory.values.map((cat) {
@@ -351,13 +359,16 @@ class _AdminReportsState extends State<AdminReports> {
                             ),
                           ),
                           Expanded(
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(4),
-                              child: LinearProgressIndicator(
-                                value: pct,
-                                backgroundColor: C.surface,
-                                valueColor: AlwaysStoppedAnimation(cat.color),
-                                minHeight: 8,
+                            child: Semantics(
+                              label: l.categorySalesProgress(cat.label, sold.toString()),
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(4),
+                                child: LinearProgressIndicator(
+                                  value: pct,
+                                  backgroundColor: C.surface,
+                                  valueColor: AlwaysStoppedAnimation(cat.color),
+                                  minHeight: 8,
+                                ),
                               ),
                             ),
                           ),

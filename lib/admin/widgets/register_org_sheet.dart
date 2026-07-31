@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:ems_app/providers/auth_provider.dart';
+import 'package:ems_app/l10n/app_localizations.dart';
 
-import '../../auth/app_provider.dart';
 import '../../models.dart';
 import '../../theme.dart';
 import '../../widgets.dart';
@@ -38,29 +39,50 @@ class _RegisterOrgSheetState extends State<RegisterOrgSheet> {
       _loading = true;
       _error = null;
     });
-    await Future.delayed(const Duration(milliseconds: 800));
 
-    final err = context.read<AppProvider>().register(
-          name: _name.text.trim(),
-          email: _email.text.trim(),
-          phone: _phone.text.trim(),
-          password: 'Org@1234',
-          role: UserRole.organizer,
-          organization: _org.text.trim().isEmpty ? null : _org.text.trim(),
+    try {
+      final authProvider = context.read<AuthProvider>();
+      await authProvider.register(
+            name: _name.text.trim(),
+            email: _email.text.trim(),
+            phone: _phone.text.trim(),
+            password: 'Org@1234',
+            role: UserRole.organizer.name,
+            organization: _org.text.trim().isEmpty ? null : _org.text.trim(),
+            preserveCurrentSession: true,
+          );
+      if (authProvider.error != null) {
+        if (!mounted) return;
+        setState(() {
+          _loading = false;
+          _error = authProvider.error;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(authProvider.error!)),
         );
+        return;
+      }
 
-    if (!mounted) return;
-    setState(() {
-      _loading = false;
-      if (err != null)
-        _error = err;
-      else
+      if (!mounted) return;
+      setState(() {
+        _loading = false;
         _done = true;
-    });
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _loading = false;
+        _error = e.toString();
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString())),
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     return DraggableScrollableSheet(
       expand: false,
       initialChildSize: .95,
@@ -74,13 +96,14 @@ class _RegisterOrgSheetState extends State<RegisterOrgSheet> {
         padding: EdgeInsets.fromLTRB(
             24, 16, 24, MediaQuery.of(context).viewInsets.bottom + 24),
         child: _done
-            ? SuccessView(
-                title: 'Organiser Registered!',
-                subtitle:
-                    'Login credentials have been assigned to the organiser. '
-                    'They can use the default password (Org@1234) and change it on first login.',
-                btnLabel: 'Done',
-                onTap: () => Navigator.pop(context),
+            ? Semantics(
+                liveRegion: true,
+                child: SuccessView(
+                  title: l.organiserRegistered,
+                  subtitle: l.organiserLoginCredentialsAssigned,
+                  btnLabel: l.done,
+                  onTap: () => Navigator.pop(context),
+                ),
               )
             : Form(
                 key: _form,
@@ -98,59 +121,68 @@ class _RegisterOrgSheetState extends State<RegisterOrgSheet> {
                         ),
                       ),
                     ),
-                    const Text('Register New Organiser',
-                        style: TextStyle(
-                            fontSize: 18, fontWeight: FontWeight.w700)),
+                    Semantics(
+                      header: true,
+                      child: Text(l.registerNewOrganiser,
+                          style: const TextStyle(
+                              fontSize: 18, fontWeight: FontWeight.w700)),
+                    ),
                     const SizedBox(height: 4),
-                    const Text(
-                        'A default password (Org@1234) will be assigned and emailed to the organiser. They must change it on first login.',
-                        style: TextStyle(fontSize: 12, color: C.t2)),
+                    Text(
+                        l.defaultPasswordAssignedDesc,
+                        style: const TextStyle(fontSize: 12, color: C.t2)),
                     const SizedBox(height: 20),
                     AppField(
-                      label: 'Full Name',
+                      label: l.fullName,
                       controller: _name,
                       prefix: Icons.person_outline_rounded,
                       validator: (v) =>
-                          v?.trim().isEmpty == true ? 'Required' : null,
+                          v?.trim().isEmpty == true ? l.requiredField : null,
                     ),
                     const SizedBox(height: 14),
                     AppField(
-                      label: 'Email Address',
+                      label: l.emailAddress,
                       controller: _email,
                       keyboard: TextInputType.emailAddress,
                       prefix: Icons.email_outlined,
                       validator: (v) {
-                        if (v?.trim().isEmpty == true) return 'Required';
-                        if (!v!.contains('@')) return 'Invalid email';
+                        if (v?.trim().isEmpty == true) return l.requiredField;
+                        if (!v!.contains('@')) return l.invalidEmail;
                         return null;
                       },
                     ),
                     const SizedBox(height: 14),
                     AppField(
-                      label: 'Phone Number',
+                      label: l.phoneNumber,
                       controller: _phone,
                       keyboard: TextInputType.phone,
                       prefix: Icons.phone_outlined,
                       validator: (v) =>
-                          v?.trim().isEmpty == true ? 'Required' : null,
+                          v?.trim().isEmpty == true ? l.requiredField : null,
                     ),
                     const SizedBox(height: 14),
                     AppField(
-                      label: 'Organisation Name (optional)',
+                      label: l.organisationNameOptional,
                       controller: _org,
                       prefix: Icons.business_outlined,
                     ),
-                    if (_error != null) ErrorBanner(_error!),
+                    if (_error != null)
+                      Semantics(
+                        liveRegion: true,
+                        child: ErrorBanner(_error!),
+                      ),
                     const SizedBox(height: 22),
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 40),
-                      child: GBtn(
-                        label: 'Register Organiser',
-                        onTap: _submit,
-                        loading: _loading,
-                        gradient: LinearGradient(
-                            colors: [C.org, C.org.withOpacity(.7)]),
-                        icon: Icons.person_add_rounded,
+                      child: Semantics(
+                        button: true,
+                        child: GBtn(
+                          label: l.registerOrganiser,
+                          onTap: _submit,
+                          loading: _loading,
+                          gradient: C.gPrimary,
+                          icon: Icons.person_add_rounded,
+                        ),
                       ),
                     ),
                   ],

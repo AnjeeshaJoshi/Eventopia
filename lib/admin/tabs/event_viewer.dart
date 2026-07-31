@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:ems_app/providers/event_provider.dart';
+import 'package:ems_app/l10n/app_localizations.dart';
 
-import '../../auth/app_provider.dart';
 import '../../widgets.dart';
 import '../widgets/admin_event_action_sheet.dart';
 
@@ -10,18 +11,19 @@ class EventViewer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final events = context.watch<AppProvider>().events;
+    final l = AppLocalizations.of(context)!;
+    final events = context.watch<EventProvider>().events;
 
     return SafeArea(
       child: Column(
         children: [
-          const Padding(
-            padding: EdgeInsets.all(16),
+          Padding(
+            padding: const EdgeInsets.all(16),
             child: Align(
               alignment: Alignment.centerLeft,
               child: Text(
-                'All Events',
-                style: TextStyle(
+                l.allEvents,
+                style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w700,
                 ),
@@ -31,8 +33,8 @@ class EventViewer extends StatelessWidget {
 
           Expanded(
             child: events.isEmpty
-                ? const Center(
-              child: Text('No events available'),
+                ? Center(
+              child: Text(l.noEventsAvailable),
             )
                 : ListView.builder(
               padding: const EdgeInsets.all(16),

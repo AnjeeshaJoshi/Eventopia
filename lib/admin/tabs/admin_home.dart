@@ -1,7 +1,12 @@
+import 'package:ems_app/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-import '../../auth/app_provider.dart';
+import 'package:ems_app/l10n/app_localizations.dart';
+import 'package:ems_app/providers/auth_provider.dart';
+import 'package:ems_app/providers/user_provider.dart';
+import 'package:ems_app/providers/event_provider.dart';
+import 'package:ems_app/providers/booking_provider.dart';
 import '../../theme.dart';
 import '../../widgets.dart';
 import '../widgets/quick_action.dart';
@@ -10,45 +15,94 @@ import '../widgets/register_org_sheet.dart';
 import '../widgets/admin_event_action_sheet.dart';
 import 'admin_reports.dart';
 import '../../models.dart';
+import '../../attendee/screens/notifications_screen.dart';
 
 class AdminHome extends StatelessWidget {
   const AdminHome({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final p = context.watch<AppProvider>();
-    final user = p.current;
-    final orgCount = p.organizers.length;
-    final attCount = p.attendeeUsers.length;
-    final evtCount = p.events.length;
-    final totalRevenue = p.bookings.fold<double>(0, (s, b) => s + b.total);
+    final authProvider = context.watch<AuthProvider>();
+    final userProvider = context.watch<UserProvider>();
+    final eventProvider = context.watch<EventProvider>();
+    final bookingProvider = context.watch<BookingProvider>();
+    
+    final l = AppLocalizations.of(context)!;
+    
+    final user = authProvider.currentUser;
+    final orgCount = userProvider.organizers.length;
+    final attCount = userProvider.attendeeUsers.length;
+    final evtCount = eventProvider.events.length;
+    final totalRevenue = bookingProvider.bookings
+        .where((booking) =>
+            booking.status == BookingStatus.confirmed ||
+            booking.status == BookingStatus.checkedIn)
+        .fold<double>(0, (sum, booking) => sum + booking.total);
 
     if (user == null) {
-      return const Center(
-        child: Text('No user logged in'),
+      return Center(
+        child: Text(l.noUserLoggedIn),
       );
     }
+    final unreadNotifications =
+        bookingProvider.unreadNotificationCount(user.uid) + eventProvider.pendingEvents.length;
 
     return Scaffold(
       body: CustomScrollView(
         slivers: [
-          // ── App bar ─────────────────────────────────────────────
+          // App bar
           SliverAppBar(
-            expandedHeight: 170,
+            expandedHeight: 140,
             pinned: true,
-            backgroundColor: C.violet,
-            foregroundColor: Colors.white,
-            surfaceTintColor: Colors.transparent,
-            elevation: 2,
-            scrolledUnderElevation: 2,
+            backgroundColor: Colors.transparent,
+            actions: [
+              NotificationBell(
+                tooltip: l.notifications,
+                unreadCount: unreadNotifications,
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const NotificationsScreen()),
+                ),
+              ),
+              Tooltip(
+                message: l.signOut,
+                child: IconButton(
+                  icon: const Icon(Icons.logout_rounded, color: Colors.white),
+                  onPressed: () async {
+                    try {
+                      await authProvider.logout();
+                      if (context.mounted) {
+                        Navigator.pushNamedAndRemoveUntil(
+                          context,
+                          '/login',
+                          (route) => false,
+                        );
+                      }
+                    } catch (e) {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text(e.toString())),
+                        );
+                      }
+                    }
+                  },
+                ),
+              ),
+            ],
             flexibleSpace: FlexibleSpaceBar(
               background: Container(
                 decoration: const BoxDecoration(
                   gradient: C.gPrimary,
                 ),
-                padding: const EdgeInsets.fromLTRB(20, 70, 20, 0),
-                child: Row(
-                  children: [
+                child: SafeArea(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
+                    child: Align(
+                      alignment: Alignment.bottomLeft,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                        child: Row(
+                          children: [
                     Container(
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
@@ -70,9 +124,9 @@ class AdminHome extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const Text(
-                            'Administrator',
-                            style: TextStyle(
+                          Text(
+                            l.administrator,
+                            style: const TextStyle(
                               fontSize: 12,
                               color: Colors.white70,
                             ),
@@ -96,35 +150,22 @@ class AdminHome extends StatelessWidget {
                         ],
                       ),
                     ),
-                    IconButton(
-                      icon: const Icon(
-                        Icons.logout_rounded,
-                        color: Colors.white,
+                          ],
+                        ),
                       ),
-                      onPressed: () {
-                        Navigator.pushNamedAndRemoveUntil(
-                          context,
-                          '/login',
-                              (route) => false,
-                        );
-
-                        Future.microtask(() {
-                          p.logout();
-                        });
-                      },
                     ),
-                  ],
+                  ),
                 ),
               ),
             ),
           ),
 
-          // ── MAIN CONTENT ────────────────────────────────────────
+          // MAIN CONTENT
           SliverPadding(
             padding: const EdgeInsets.all(20),
             sliver: SliverList(
               delegate: SliverChildListDelegate([
-                // ── Stats grid ────────────────────────────────────
+                // Stats grid
                 GridView.count(
                   crossAxisCount: 2,
                   shrinkWrap: true,
@@ -134,27 +175,26 @@ class AdminHome extends StatelessWidget {
                   childAspectRatio: 1.0,
                   children: [
                     StatBox(
-                      label: 'Organisers',
+                      label: l.organisers,
                       value: '$orgCount',
                       icon: Icons.business_rounded,
                       color: C.org,
                     ),
                     StatBox(
-                      label: 'Attendees',
+                      label: l.attendees,
                       value: '$attCount',
                       icon: Icons.people_rounded,
                       color: C.attendee,
                     ),
                     StatBox(
-                      label: 'Events',
+                      label: l.events,
                       value: '$evtCount',
                       icon: Icons.event_rounded,
                       color: C.violet,
                     ),
                     StatBox(
-                      label: 'Revenue',
-                      value:
-                          'NPR ${NumberFormat.compact().format(totalRevenue)}',
+                      label: l.revenue,
+                      value: 'NPR ${NumberFormat.compact().format(totalRevenue)}',
                       icon: Icons.payments_rounded,
                       color: C.amber,
                     ),
@@ -163,8 +203,8 @@ class AdminHome extends StatelessWidget {
 
                 const SizedBox(height: 24),
 
-                // ── Quick actions ───────────────────────────────
-                const SectionTitle(title: 'Quick Actions'),
+                // Quick actions
+                SectionTitle(title: l.quickActions),
                 const SizedBox(height: 12),
 
                 IntrinsicHeight(
@@ -173,7 +213,7 @@ class AdminHome extends StatelessWidget {
                     children: [
                     QuickAction(
                       icon: Icons.person_add_rounded,
-                      label: 'Add\nOrganiser',
+                      label: l.addOrganiser,
                       color: C.org,
                       onTap: () => showModalBottomSheet(
                         context: context,
@@ -185,7 +225,7 @@ class AdminHome extends StatelessWidget {
                     const SizedBox(width: 12),
                     QuickAction(
                       icon: Icons.assignment_late_rounded,
-                      label: 'Event\nRequests',
+                      label: l.eventRequests,
                       color: C.amber,
                       onTap: () => Navigator.push(
                         context,
@@ -195,7 +235,7 @@ class AdminHome extends StatelessWidget {
                     const SizedBox(width: 12),
                     QuickAction(
                       icon: Icons.bar_chart_rounded,
-                      label: 'Reports',
+                      label: l.reports,
                       color: C.sky,
                       onTap: () {
                         Navigator.push(
@@ -210,15 +250,15 @@ class AdminHome extends StatelessWidget {
 
                 const SizedBox(height: 24),
 
-                // ── Events ───────────────────────────────────────
+                // Events
                 SectionTitle(
-                  title: 'All Events',
-                  action: 'See all',
+                  title: l.allEvents,
+                  action: l.seeAll,
                   onAction: () {},
                 ),
                 const SizedBox(height: 12),
 
-                ...p.events.map(
+                ...eventProvider.events.map(
                   (e) => Padding(
                     padding: const EdgeInsets.only(bottom: 12),
                     child: EventCard(
@@ -237,13 +277,13 @@ class AdminHome extends StatelessWidget {
 
                 const SizedBox(height: 20),
 
-                // ── Occupancy ────────────────────────────────────
-                const SectionTitle(title: 'Auditorium Occupancy'),
+                //Occupancy
+                SectionTitle(title: l.auditoriumOccupancy),
                 const SizedBox(height: 12),
 
                 GCard(
                   child: Column(
-                    children: p.events.map((e) {
+                    children: eventProvider.events.map((e) {
                       final pct = e.occupancyRate;
                       final col = pct > .8
                           ? C.rose
@@ -280,18 +320,21 @@ class AdminHome extends StatelessWidget {
                               ],
                             ),
                             const SizedBox(height: 5),
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(4),
-                              child: LinearProgressIndicator(
-                                value: pct,
-                                backgroundColor: C.surface,
-                                valueColor: AlwaysStoppedAnimation(col),
-                                minHeight: 7,
+                            Semantics(
+                              label: l.occupancyProgress(e.title, (pct * 100).toStringAsFixed(0)),
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(4),
+                                child: LinearProgressIndicator(
+                                  value: pct,
+                                  backgroundColor: C.surface,
+                                  valueColor: AlwaysStoppedAnimation(col),
+                                  minHeight: 7,
+                                ),
                               ),
                             ),
                             const SizedBox(height: 3),
                             Text(
-                              '${e.bookedSeats} / ${e.totalSeats} seats booked',
+                              l.seatsBooked(e.bookedSeats.toString(), e.totalSeats.toString()),
                               style: const TextStyle(
                                 fontSize: 11,
                                 color: C.t3,
@@ -313,4 +356,3 @@ class AdminHome extends StatelessWidget {
     );
   }
 }
-

@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:qr_flutter/qr_flutter.dart';
-import '../../auth/app_provider.dart';
+import 'package:ems_app/providers/booking_provider.dart';
+import 'package:ems_app/l10n/app_localizations.dart';
 import '../../theme.dart';
 import '../../widgets.dart';
-
 class CheckInTab extends StatefulWidget {
   const CheckInTab({super.key});
 
@@ -17,25 +17,34 @@ class _CheckInTabState extends State<CheckInTab> {
   String? _result;
   bool _success = false;
 
-  void _scan() {
+  void _scan() async {
     final qr = _ctrl.text.trim();
     if (qr.isEmpty) return;
-    final title = context.read<AppProvider>().checkIn(qr);
-    setState(() {
-      _success = title != null;
-      _result = title != null
-          ? 'Entry approved for "$title"'
-          : 'QR code not found or already used.';
-    });
+    
+    final l = AppLocalizations.of(context)!;
+    
+    try {
+      await context.read<BookingProvider>().checkIn(qr);
+      setState(() {
+        _success = true;
+        _result = l.entryApprovedFor("Attendee");
+      });
+    } catch (e) {
+      setState(() {
+        _success = false;
+        _result = e.toString();
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
       child: Column(
         children: [
-          AppBar(title: const Text('QR Check-In')), // optional header UI
+          AppBar(title: Text(l.qrCheckIn)), // optional header UI
 
           const SizedBox(height: 16),
 
@@ -57,9 +66,9 @@ class _CheckInTabState extends State<CheckInTab> {
                   ),
                 ),
                 const SizedBox(height: 12),
-                const Text(
-                  'Scan QR at entry gate',
-                  style: TextStyle(fontSize: 13, color: C.t2),
+                Text(
+                  l.scanQrAtGate,
+                  style: const TextStyle(fontSize: 13, color: C.t2),
                 ),
               ],
             ),
@@ -71,13 +80,16 @@ class _CheckInTabState extends State<CheckInTab> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Manual QR Code Entry',
-                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                Semantics(
+                  label: l.manualQrCodeEntry,
+                  child: Text(
+                    l.manualQrCodeEntry,
+                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                  ),
                 ),
                 const SizedBox(height: 12),
                 AppField(
-                  label: 'Enter QR Code',
+                  label: l.enterQrCode,
                   controller: _ctrl,
                   prefix: Icons.qr_code_rounded,
                 ),
@@ -85,7 +97,7 @@ class _CheckInTabState extends State<CheckInTab> {
                 SizedBox(
                   width: double.infinity,
                   child: GBtn(
-                    label: 'Validate Entry',
+                    label: l.validateEntry,
                     onTap: _scan,
                     gradient: C.gTeal,
                     icon: Icons.check_circle_rounded,

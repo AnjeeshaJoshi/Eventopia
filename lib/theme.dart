@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-// ── Palette ──────────────────────────────────────────────────────────────────
 class C {
   C._();
 
@@ -79,7 +78,6 @@ class C {
   );
 }
 
-// ── Theme ────────────────────────────────────────────────────────────────────
 class AppTheme {
   static ThemeData get light {
     final base = ThemeData.light(useMaterial3: true);

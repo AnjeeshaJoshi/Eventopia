@@ -1,12 +1,20 @@
+import 'package:ems_app/models/event_model.dart';
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:provider/provider.dart';
-
-import '../auth/app_provider.dart';
+import 'package:ems_app/providers/booking_provider.dart';
+import 'package:ems_app/l10n/app_localizations.dart';
 import '../theme.dart';
 
 class QrScannerScreen extends StatefulWidget {
-  const QrScannerScreen({super.key});
+  final EventModel? event;
+  final String organizerId;
+
+  const QrScannerScreen({
+    super.key,
+    required this.event,
+    required this.organizerId,
+  });
 
   @override
   State<QrScannerScreen> createState() => _QrScannerScreenState();
@@ -34,35 +42,53 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
 
     _controller.stop();
 
-    final resultMsg = context.read<AppProvider>().verifyTicket(code);
+    final l = AppLocalizations.of(context)!;
+    String resultMsg;
+    bool isSuccess = false;
 
-    await showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (ctx) => AlertDialog(
-        title: Text(
-          resultMsg.startsWith('Welcome') ? 'Ticket Verified' : 'Scan Failed',
-          style: TextStyle(
-            color: resultMsg.startsWith('Welcome') ? C.teal : C.rose,
-          ),
-        ),
-        content: Text(resultMsg),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.pop(ctx);
-            },
-            child: const Text('OK'),
-          ),
-        ],
-      ),
-    );
+    try {
+      final result = await context.read<BookingProvider>().verifyTicket(
+        code,
+        widget.event,
+        widget.organizerId,
+      );
+
+      isSuccess = result['status'];
+      resultMsg = result['message'];
+    } catch (e) {
+      isSuccess = false;
+      resultMsg = e.toString();
+    }
 
     if (mounted) {
-      setState(() {
-        _isProcessing = false;
-      });
-      _controller.start();
+      await showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (ctx) => AlertDialog(
+          title: Text(
+            isSuccess ? l.ticketVerified : l.scanFailed,
+            style: TextStyle(
+              color: isSuccess ? C.teal : C.rose,
+            ),
+          ),
+          content: Text(resultMsg),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(ctx);
+              },
+              child: Text(l.ok),
+            ),
+          ],
+        ),
+      );
+
+      if (mounted) {
+        setState(() {
+          _isProcessing = false;
+        });
+        _controller.start();
+      }
     }
   }
 
@@ -74,9 +100,10 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Scan Ticket'),
+        title: Text(l.scanTicket),
       ),
       body: Stack(
         children: [

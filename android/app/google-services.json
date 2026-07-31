@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "180301204443",
+    "project_id": "eventopia-76f01",
+    "storage_bucket": "eventopia-76f01.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:180301204443:android:3fd6776f8d5cd3b7e275fe",
+        "android_client_info": {
+          "package_name": "com.example.eventopia"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAtL4yzWSPSB3nNDXT1nukTPJxk6zwFtuo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

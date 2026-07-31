@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-
-import '../auth/app_provider.dart';
+import 'package:ems_app/providers/auth_provider.dart';
+import 'package:ems_app/providers/event_provider.dart';
+import 'package:ems_app/l10n/app_localizations.dart';
 import '../theme.dart';
 import '../widgets.dart';
 import 'widgets/create_event_sheet.dart';
@@ -12,32 +13,44 @@ class OrgEvents extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final myEvents = context.watch<AppProvider>().myEvents;
+    final l = AppLocalizations.of(context)!;
+    final authProvider = context.watch<AuthProvider>();
+    final eventProvider = context.watch<EventProvider>();
+    final myEvents = eventProvider.getMyEvents(authProvider.currentUser!.uid);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('My Events'),
+        title: Text(l.myEvents),
       ),
 
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => showModalBottomSheet(
-          context: context,
-          isScrollControlled: true,
-          backgroundColor: Colors.transparent,
-          builder: (_) => const CreateEventSheet(),
+      floatingActionButton: Semantics(
+        label: l.createEvent,
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: C.gPrimary,
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: FloatingActionButton.extended(
+            onPressed: () => showModalBottomSheet(
+              context: context,
+              isScrollControlled: true,
+              backgroundColor: Colors.transparent,
+              builder: (_) => const CreateEventSheet(),
+            ),
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            foregroundColor: Colors.white,
+            icon: const Icon(Icons.add_rounded),
+            label: Text(l.createEvent),
+          ),
         ),
-        backgroundColor: C.rose,
-        foregroundColor: Colors.white,
-        icon: const Icon(Icons.add_rounded),
-        label: const Text('Create'),
       ),
-
 
       body: myEvents.isEmpty
-          ? const Center(
+          ? Center(
         child: Text(
-          'No events yet.',
-          style: TextStyle(color: C.t2),
+          l.noEventsYet,
+          style: const TextStyle(color: C.t2),
         ),
       )
           : ListView.builder(

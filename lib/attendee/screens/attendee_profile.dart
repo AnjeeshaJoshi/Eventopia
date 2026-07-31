@@ -1,75 +1,98 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../auth/app_provider.dart';
+import 'package:ems_app/providers/auth_provider.dart';
+import 'package:ems_app/providers/booking_provider.dart';
+import 'package:ems_app/providers/user_provider.dart';
+import 'package:ems_app/l10n/app_localizations.dart';
+import '../../models.dart';
 import '../../theme.dart';
 import '../../widgets.dart';
 
 class AttendeeProfile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final p = context.watch<AppProvider>();
-    final user = p.current;
+    final l = AppLocalizations.of(context)!;
+    final authProvider = context.watch<AuthProvider>();
+    final bookingProvider = context.watch<BookingProvider>();
+    final userProvider = context.watch<UserProvider>();
+    final user = authProvider.currentUser;
     if (user == null) {
-      return const Center(
-        child: Text('No user logged in'),
+      return Center(
+        child: Text(l.noUserLoggedIn),
       );
     }
 
+    final myBookings = bookingProvider.getMyBookings(user.uid);
+    final activeBookings = myBookings
+        .where((booking) => booking.status != BookingStatus.cancelled)
+        .toList();
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('My Profile'),
+        title: Text(l.myProfile),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.edit_rounded, color: C.violet),
-            onPressed: () {
-              final nameCtrl = TextEditingController(text: user.name);
-              final phoneCtrl = TextEditingController(text: user.phone);
+          Tooltip(
+            message: l.editProfile,
+            child: IconButton(
+              icon: const Icon(Icons.edit_rounded, color: C.violet),
+              onPressed: () {
+                final nameCtrl = TextEditingController(text: user.name);
+                final phoneCtrl = TextEditingController(text: user.phone);
 
-              showDialog(
-                context: context,
-                builder: (_) => AlertDialog(
-                  title: const Text('Edit Profile'),
-                  content: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      TextField(
-                        controller: nameCtrl,
-                        decoration: const InputDecoration(labelText: 'Name'),
+                showDialog(
+                  context: context,
+                  builder: (_) => AlertDialog(
+                    title: Text(l.editProfile),
+                    content: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        TextField(
+                          controller: nameCtrl,
+                          decoration: InputDecoration(labelText: l.name),
+                        ),
+                        const SizedBox(height: 12),
+                        TextField(
+                          controller: phoneCtrl,
+                          decoration: InputDecoration(labelText: l.phone),
+                        ),
+                      ],
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: Text(l.cancel),
                       ),
-                      const SizedBox(height: 12),
-                      TextField(
-                        controller: phoneCtrl,
-                        decoration: const InputDecoration(labelText: 'Phone'),
+                      ElevatedButton(
+                        onPressed: () async {
+                          if (nameCtrl.text.isEmpty || phoneCtrl.text.isEmpty) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text(l.pleaseFillAllFields)),
+                            );
+                            return;
+                          }
+                          try {
+                            await userProvider.updateProfile(uid: user.uid, name: nameCtrl.text, phone: phoneCtrl.text);
+                            if (context.mounted) {
+                              Navigator.pop(context);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text(l.profileUpdatedSuccessfully)),
+                              );
+                            }
+                          } catch (e) {
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text(e.toString())),
+                              );
+                            }
+                          }
+                        },
+                        child: Text(l.save),
                       ),
                     ],
                   ),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: const Text('Cancel'),
-                    ),
-                    ElevatedButton(
-                      onPressed: () {
-                        if (nameCtrl.text.isEmpty || phoneCtrl.text.isEmpty) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                                content: Text('Please fill all fields')),
-                          );
-                          return;
-                        }
-                        p.updateProfile(user.id, nameCtrl.text, phoneCtrl.text);
-                        Navigator.pop(context);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                              content: Text('Profile updated successfully')),
-                        );
-                      },
-                      child: const Text('Save'),
-                    ),
-                  ],
-                ),
-              );
-            },
+                );
+              },
+            ),
           ),
           const SizedBox(width: 8),
         ],
@@ -83,7 +106,7 @@ class AttendeeProfile extends StatelessWidget {
                 CircleAvatar(
                   radius: 36,
                   backgroundColor: C.attendee.withOpacity(.15),
-                  child: Text(user.name[0],
+                  child: Text(user.name.isNotEmpty ? user.name[0] : '?',
                       style: const TextStyle(
                           fontSize: 30,
                           fontWeight: FontWeight.w700,
@@ -100,115 +123,142 @@ class AttendeeProfile extends StatelessWidget {
                 const SizedBox(height: 8),
                 InfoRow(
                     icon: Icons.email_outlined,
-                    label: 'Email',
-                    value: user.email),
+                    label: l.email,
+                    value: user.email,
+                    maxValueLines: 1),
                 InfoRow(
                     icon: Icons.phone_outlined,
-                    label: 'Phone',
+                    label: l.phone,
                     value: user.phone),
                 InfoRow(
                     icon: Icons.confirmation_number_rounded,
-                    label: 'Bookings',
-                    value: '${p.myBookings.length}'),
+                    label: l.bookings,
+                    value: '${activeBookings.length}'),
               ],
             ),
           ),
           const SizedBox(height: 16),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 50),
-            child: GBtn(
-              label: 'Reset Password',
-              icon: Icons.lock_reset_rounded,
-              onTap: () {
-                final newPassCtrl = TextEditingController();
-                final confirmPassCtrl = TextEditingController();
+            child: Semantics(
+              label: l.resetPassword,
+              child: GBtn(
+                label: l.resetPassword,
+                icon: Icons.lock_reset_rounded,
+                onTap: () {
+                  final currentPassCtrl = TextEditingController();
+                  final newPassCtrl = TextEditingController();
+                  final confirmPassCtrl = TextEditingController();
 
-                showDialog(
-                  context: context,
-                  builder: (_) => AlertDialog(
-                    title: const Text('Reset Password'),
-                    content: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        TextField(
-                          controller: newPassCtrl,
-                          obscureText: true,
-                          decoration: const InputDecoration(
-                            labelText: 'New Password',
+                  showDialog(
+                    context: context,
+                    builder: (_) => AlertDialog(
+                      scrollable: true,
+                      insetPadding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 24,
+                      ),
+                      title: Text(l.resetPassword),
+                      content: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          TextField(
+                            controller: currentPassCtrl,
+                            obscureText: true,
+                            decoration: const InputDecoration(
+                              labelText: 'Current Password',
+                            ),
                           ),
+                          const SizedBox(height: 12),
+                          TextField(
+                            controller: newPassCtrl,
+                            obscureText: true,
+                            decoration: InputDecoration(
+                              labelText: l.newPassword,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          TextField(
+                            controller: confirmPassCtrl,
+                            obscureText: true,
+                            decoration: InputDecoration(
+                              labelText: l.confirmPassword,
+                            ),
+                          ),
+                        ],
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(context),
+                          child: Text(l.cancel),
                         ),
-                        const SizedBox(height: 12),
-                        TextField(
-                          controller: confirmPassCtrl,
-                          obscureText: true,
-                          decoration: const InputDecoration(
-                            labelText: 'Confirm Password',
-                          ),
+                        ElevatedButton(
+                          onPressed: () async {
+                            if (currentPassCtrl.text.isEmpty ||
+                                newPassCtrl.text.isEmpty ||
+                                confirmPassCtrl.text.isEmpty) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text(l.pleaseFillAllFields)),
+                              );
+                              return;
+                            }
+
+                            if (newPassCtrl.text != confirmPassCtrl.text) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text(l.passwordsDoNotMatch)),
+                              );
+                              return;
+                            }
+
+                            try {
+                              await authProvider.changePassword(currentPassCtrl.text, newPassCtrl.text);
+                              if (context.mounted) {
+                                Navigator.pop(context);
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text(l.passwordChangedSuccessfully)),
+                                );
+                              }
+                            } catch (e) {
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text(e.toString())),
+                                );
+                              }
+                            }
+                          },
+                          child: Text(l.update),
                         ),
                       ],
                     ),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.pop(context),
-                        child: const Text('Cancel'),
-                      ),
-                      ElevatedButton(
-                        onPressed: () {
-                          if (newPassCtrl.text.isEmpty ||
-                              confirmPassCtrl.text.isEmpty) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Please fill all fields'),
-                              ),
-                            );
-                            return;
-                          }
-
-                          if (newPassCtrl.text != confirmPassCtrl.text) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Passwords do not match'),
-                              ),
-                            );
-                            return;
-                          }
-
-                          p.changePassword(user.id, newPassCtrl.text);
-                          Navigator.pop(context);
-
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text(
-                                'Password changed successfully',
-                              ),
-                            ),
-                          );
-                        },
-                        child: const Text('Update'),
-                      ),
-                    ],
-                  ),
-                );
-              },
+                  );
+                },
+              ),
             ),
           ),
           const SizedBox(height: 16),
           Padding(padding: const EdgeInsets.symmetric(horizontal: 50),
-          child: GBtn(
-            label: 'Sign Out',
-            onTap: () {
-              Navigator.pushNamedAndRemoveUntil(
-                context,
-                '/login',
-                    (route) => false,
-              );
+          child: Semantics(
+            label: l.signOut,
+            child: GBtn(
+              label: l.signOut,
+              onTap: () {
+                Navigator.pushNamedAndRemoveUntil(
+                  context,
+                  '/login',
+                      (route) => false,
+                );
 
-              Future.microtask(() {
-                p.logout();
-              });
-            },
-            gradient: C.gRose,
-            icon: Icons.logout_rounded,
+                Future.microtask(() async {
+                  try {
+                    await authProvider.logout();
+                  } catch (e) {
+                    // Handle error silently
+                  }
+                });
+              },
+              gradient: C.gPrimary,
+              icon: Icons.logout_rounded,
+            ),
           ),
           ),
         ],

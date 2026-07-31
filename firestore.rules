@@ -1,0 +1,93 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    function getUserRole(uid) {
+      return get(/databases/$(database)/documents/users/$(uid)).data.role;
+    }
+    
+    function isAdmin() {
+      return request.auth != null && getUserRole(request.auth.uid) == 'admin';
+    }
+    
+    function isOrganizer() {
+      return request.auth != null && getUserRole(request.auth.uid) == 'organizer';
+    }
+    
+    function isOwner(uid) {
+      return request.auth != null && request.auth.uid == uid;
+    }
+
+    function isEventOrganizer(eventId) {
+      return isOrganizer() &&
+        get(/databases/$(database)/documents/events/$(eventId)).data.organizerId == request.auth.uid;
+    }
+
+    function isAttendeeInventoryUpdate() {
+      return request.auth != null && getUserRole(request.auth.uid) == 'attendee' &&
+        request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['ticketTypes', 'seats']);
+    }
+
+    match /users/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow create: if isAdmin() ||
+        (isOwner(userId) && request.resource.data.uid == userId &&
+         request.resource.data.role == 'attendee');
+      allow update: if isAdmin() ||
+        (isOwner(userId) && request.resource.data.uid == resource.data.uid &&
+         request.resource.data.role == resource.data.role &&
+         request.resource.data.email == resource.data.email &&
+         request.resource.data.createdAt == resource.data.createdAt);
+      allow delete: if isAdmin();
+    }
+    
+    match /events/{eventId} {
+      allow read: if true;
+      allow create: if isAdmin() ||
+        (isOrganizer() && request.resource.data.organizerId == request.auth.uid);
+      allow update: if isAdmin() ||
+        (isOrganizer() && resource.data.organizerId == request.auth.uid &&
+         request.resource.data.organizerId == resource.data.organizerId) ||
+        isAttendeeInventoryUpdate();
+      allow delete: if isAdmin() ||
+        (isOrganizer() && resource.data.organizerId == request.auth.uid);
+    }
+    
+    match /bookings/{bookingId} {
+      allow read: if isAdmin() || isEventOrganizer(resource.data.eventId) ||
+        (request.auth != null && resource.data.userId == request.auth.uid);
+      allow create: if request.auth != null &&
+        request.resource.data.userId == request.auth.uid;
+      allow update: if isAdmin() ||
+        (isEventOrganizer(resource.data.eventId) &&
+         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']) &&
+         request.resource.data.status == 'checkedIn') ||
+        (request.auth != null && resource.data.userId == request.auth.uid &&
+         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']) &&
+         request.resource.data.status == 'cancelled');
+      allow delete: if isAdmin() ||
+        (request.auth != null && resource.data.userId == request.auth.uid);
+    }
+
+    match /waitlists/{waitlistId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null &&
+        request.resource.data.attendeeId == request.auth.uid;
+      allow update, delete: if isAdmin() ||
+        (request.auth != null && resource.data.attendeeId == request.auth.uid);
+    }
+
+    match /notifications/{notificationId} {
+      allow read: if isAdmin() ||
+        (request.auth != null && resource.data.userId == request.auth.uid);
+      // A signed-in attendee can notify waitlisted users when a cancellation
+      // releases tickets. Production apps should move this to a server.
+      allow create: if request.auth != null;
+      allow update: if request.auth != null &&
+        resource.data.userId == request.auth.uid &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['isRead']);
+      allow delete: if false;
+    }
+  }
+}

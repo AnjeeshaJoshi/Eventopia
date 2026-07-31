@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:ems_app/l10n/app_localizations.dart';
 
 import 'theme.dart';
 
@@ -38,6 +39,8 @@ class _SplashScreenState extends State<SplashScreen>
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+
     return Scaffold(
       body: Container(
         width: double.infinity,
@@ -96,53 +99,56 @@ class _SplashScreenState extends State<SplashScreen>
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  SizedBox(
-                    width: 260,
-                    height: 260,
-                    child: Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        // Glow Behind Logo
-                        Container(
-                          width: 180,
-                          height: 180,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            gradient: RadialGradient(
-                              colors: [
-                                C.violet.withValues(alpha: 0.15),
-                                Colors.transparent,
+                  Semantics(
+                    label: l?.appTitle ?? 'Eventopia',
+                    child: SizedBox(
+                      width: 260,
+                      height: 260,
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          // Glow Behind Logo
+                          Container(
+                            width: 180,
+                            height: 180,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              gradient: RadialGradient(
+                                colors: [
+                                  C.violet.withValues(alpha: 0.15),
+                                  Colors.transparent,
+                                ],
+                              ),
+                            ),
+                          ),
+
+                          // Logo Card
+                          Container(
+                            padding: const EdgeInsets.all(18),
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(30),
+                              color: Colors.white.withValues(alpha: 0.75),
+                              border: Border.all(
+                                color: Colors.white,
+                                width: 1.5,
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: C.violet.withValues(alpha: 0.15),
+                                  blurRadius: 30,
+                                  spreadRadius: 3,
+                                  offset: const Offset(0, 10),
+                                ),
                               ],
                             ),
-                          ),
-                        ),
-
-                        // Logo Card
-                        Container(
-                          padding: const EdgeInsets.all(18),
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(30),
-                            color: Colors.white.withValues(alpha: 0.75),
-                            border: Border.all(
-                              color: Colors.white,
-                              width: 1.5,
+                            child: Image.asset(
+                              'assets/images/logo1.png',
+                              width: 160,
+                              fit: BoxFit.contain,
                             ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: C.violet.withValues(alpha: 0.15),
-                                blurRadius: 30,
-                                spreadRadius: 3,
-                                offset: const Offset(0, 10),
-                              ),
-                            ],
                           ),
-                          child: Image.asset(
-                            'assets/images/logo1.png',
-                            width: 160,
-                            fit: BoxFit.contain,
-                          ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   )
                       .animate(onPlay: (c) => c.repeat(reverse: true))
@@ -186,7 +192,7 @@ class _SplashScreenState extends State<SplashScreen>
                   const SizedBox(height: 20),
 
                   Text(
-                    "What's Poppin' at HELP?",
+                    l?.whatsPoppin ?? "What's Poppin' at HELP?",
                     style: TextStyle(
                       color: Colors.grey.shade700,
                       fontSize: 15,

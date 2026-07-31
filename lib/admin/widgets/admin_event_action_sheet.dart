@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../auth/app_provider.dart';
+import 'package:ems_app/providers/event_provider.dart';
+import 'package:ems_app/l10n/app_localizations.dart';
 import '../../models.dart';
 import '../../theme.dart';
 import '../../widgets.dart';
 
 class AdminEventActionSheet extends StatefulWidget {
-  final AppEvent event;
+  final EventModel event;
 
   const AdminEventActionSheet({super.key, required this.event});
 
@@ -17,6 +18,33 @@ class AdminEventActionSheet extends StatefulWidget {
 class _AdminEventActionSheetState extends State<AdminEventActionSheet> {
   late EventStatus _status;
 
+  String _statusLabel(BuildContext context, EventStatus status) {
+    final language = Localizations.localeOf(context).languageCode;
+    if (language == 'hi') {
+      switch (status) {
+        case EventStatus.planned: return 'नियोजित';
+        case EventStatus.pending: return 'लंबित';
+        case EventStatus.upcoming: return 'आगामी';
+        case EventStatus.ongoing: return 'चल रहा है';
+        case EventStatus.completed: return 'समाप्त';
+        case EventStatus.cancelled: return 'रद्द';
+        case EventStatus.postponed: return 'स्थगित';
+      }
+    }
+    if (language == 'ne') {
+      switch (status) {
+        case EventStatus.planned: return 'योजनाबद्ध';
+        case EventStatus.pending: return 'विचाराधीन';
+        case EventStatus.upcoming: return 'आगामी';
+        case EventStatus.ongoing: return 'चलिरहेको';
+        case EventStatus.completed: return 'समाप्त';
+        case EventStatus.cancelled: return 'रद्द';
+        case EventStatus.postponed: return 'स्थगित';
+      }
+    }
+    return status.label;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -25,6 +53,7 @@ class _AdminEventActionSheetState extends State<AdminEventActionSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     return Container(
       decoration: const BoxDecoration(
         color: C.surface,
@@ -42,16 +71,19 @@ class _AdminEventActionSheetState extends State<AdminEventActionSheet> {
               decoration: BoxDecoration(color: C.border, borderRadius: BorderRadius.circular(2)),
             ),
           ),
-          const Text('Manage Event', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+          Semantics(
+            label: l.manageEvent,
+            child: Text(l.manageEvent, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+          ),
           const SizedBox(height: 16),
-          const Align(
+          Align(
             alignment: Alignment.centerLeft,
-            child: Text('Change Status', style: TextStyle(fontWeight: FontWeight.w600, color: C.t2)),
+            child: Text(l.changeStatus, style: const TextStyle(fontWeight: FontWeight.w600, color: C.t2)),
           ),
           const SizedBox(height: 8),
           ...EventStatus.values.map((s) {
             return RadioListTile<EventStatus>(
-              title: Text(s.label),
+              title: Text(_statusLabel(context, s)),
               value: s,
               groupValue: _status,
               activeColor: C.violet,
@@ -67,27 +99,33 @@ class _AdminEventActionSheetState extends State<AdminEventActionSheet> {
             children: [
               Expanded(
                 child: GBtn(
-                  label: 'Delete Event',
-                  gradient: const LinearGradient(colors: [C.rose, C.rose]),
+                  label: l.deleteEvent,
+                  gradient: C.gPrimary,
                   onTap: () {
                     // Show confirmation dialog before deleting
                     showDialog(
                       context: context,
                       builder: (ctx) => AlertDialog(
-                        title: const Text('Delete Event'),
-                        content: const Text('Are you sure you want to delete this event? This action cannot be undone.'),
+                        title: Text(l.deleteEvent),
+                        content: Text(l.areYouSureDeleteEvent),
                         actions: [
                           TextButton(
                             onPressed: () => Navigator.pop(ctx),
-                            child: const Text('Cancel'),
+                            child: Text(l.cancel),
                           ),
                           TextButton(
-                            onPressed: () {
-                              context.read<AppProvider>().deleteEvent(widget.event.id);
-                              Navigator.pop(ctx); // Close dialog
-                              Navigator.pop(context); // Close bottom sheet
+                            onPressed: () async {
+                              try {
+                                await context.read<EventProvider>().deleteEvent(widget.event.eventId);
+                                if (ctx.mounted) Navigator.pop(ctx); // Close dialog
+                                if (context.mounted) Navigator.pop(context); // Close bottom sheet
+                              } catch (e) {
+                                if (ctx.mounted) {
+                                  ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(content: Text(e.toString())));
+                                }
+                              }
                             },
-                            child: const Text('Delete', style: TextStyle(color: C.rose)),
+                            child: Text(l.delete, style: const TextStyle(color: C.rose)),
                           ),
                         ],
                       ),
@@ -98,10 +136,16 @@ class _AdminEventActionSheetState extends State<AdminEventActionSheet> {
               const SizedBox(width: 12),
               Expanded(
                 child: GBtn(
-                  label: 'Save Changes',
-                  onTap: () {
-                    context.read<AppProvider>().updateEventStatus(widget.event.id, _status);
-                    Navigator.pop(context);
+                  label: l.saveChanges,
+                  onTap: () async {
+                    try {
+                      await context.read<EventProvider>().updateEventStatus(widget.event.eventId, _status);
+                      if (context.mounted) Navigator.pop(context);
+                    } catch (e) {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+                      }
+                    }
                   },
                 ),
               ),

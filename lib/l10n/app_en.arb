@@ -1,0 +1,683 @@
+{
+  "@@locale": "en",
+  "whatsPoppin": "What's Poppin' at HELP?",
+  "soldOut": "SOLD OUT",
+  "full": "Full",
+  "seatsLeft": "{seats} left",
+  "@seatsLeft": {
+    "description": "Text for seatsLeft",
+    "placeholders": {
+      "seats": {
+        "type": "String",
+        "example": "seats"
+      }
+    }
+  },
+  "fromNpr": "From NPR {price}",
+  "@fromNpr": {
+    "description": "Text for fromNpr",
+    "placeholders": {
+      "price": {
+        "type": "String",
+        "example": "price"
+      }
+    }
+  },
+  "admin": "Admin",
+  "organizer": "Organizer",
+  "attendee": "Attendee",
+  "weak": "Weak",
+  "fair": "Fair",
+  "good": "Good",
+  "strong": "Strong",
+  "passwordStrength": "Password strength: {label}",
+  "@passwordStrength": {
+    "description": "Text for passwordStrength",
+    "placeholders": {
+      "label": {
+        "type": "String",
+        "example": "label"
+      }
+    }
+  },
+  "changeDefaultPasswordPrompt": "Please change your default password to continue.",
+  "appTitle": "Eventopia",
+  "welcomeBack": "Welcome Back!",
+  "back": "Back",
+  "toggleVisibility":"Show/Hide Password",
+  "loginToContinue": "Login to continue",
+  "emailAddress": "Email Address",
+  "emailIsRequired": "Email is required",
+  "password": "Password",
+  "passwordIsRequired": "Password is required",
+  "forgotPassword": "Forgot Password?",
+  "logIn": "Log In",
+  "dontHaveAccount": "Don't have an account? ",
+  "createAccountTitle": "Create Account",
+  "joinEventopia": "Join Eventopia",
+  "registeringAs": "Registering as: ",
+  "fullName": "Full Name",
+  "fullNameIsRequired": "Full name is required",
+  "nameIsTooShort": "Name is too short",
+  "enterValidEmail": "Enter a valid email address",
+  "phoneNumber": "Phone Number",
+  "phoneIsRequired": "Phone number is required",
+  "enterValidPhone": "Enter a valid phone number",
+  "minimumSixChars": "Minimum 6 characters",
+  "confirmPassword": "Confirm Password",
+  "pleaseConfirmPassword": "Please confirm your password",
+  "passwordsDoNotMatch": "Passwords do not match",
+  "alreadyHaveAccount": "Already have an account?  ",
+  "signIn": "Sign In",
+  "home": "Home",
+  "users": "Users",
+  "events": "Events",
+  "profile": "Profile",
+  "eventRequests": "Event Requests",
+  "noPendingRequests": "No pending requests",
+  "byOrganizer": "By {organizer}",
+  "@byOrganizer": {
+    "description": "Text for byOrganizer",
+    "placeholders": {
+      "organizer": {
+        "type": "String",
+        "example": "organizer"
+      }
+    }
+  },
+  "eventRejected": "Event rejected",
+  "reject": "Reject",
+  "eventApproved": "Event approved",
+  "approve": "Approve",
+  "noUserLoggedIn": "No user logged in",
+  "administrator": "Administrator",
+  "organisers": "Organisers",
+  "attendees": "Attendees",
+  "revenue": "Revenue",
+  "nprRevenue": "NPR {revenue}",
+  "@nprRevenue": {
+    "description": "Text for nprRevenue",
+    "placeholders": {
+      "revenue": {
+        "type": "String",
+        "example": "revenue"
+      }
+    }
+  },
+  "quickActions": "Quick Actions",
+  "addOrganiser": "Add\nOrganiser",
+  "eventRequestsQuickAction": "Event\nRequests",
+  "reports": "Reports",
+  "allEvents": "All Events",
+  "seeAll": "See all",
+  "auditoriumOccupancy": "Auditorium Occupancy",
+  "seatsBooked": "{booked} / {total} seats booked",
+  "@seatsBooked": {
+    "description": "Text for seatsBooked",
+    "placeholders": {
+      "booked": {
+        "type": "String",
+        "example": "booked"
+      },
+      "total": {
+        "type": "String",
+        "example": "total"
+      }
+    }
+  },
+  "myProfile": "My Profile",
+  "editProfile": "Edit Profile",
+  "name": "Name",
+  "phone": "Phone",
+  "cancel": "Cancel",
+  "pleaseFillAllFields": "Please fill all fields",
+  "profileUpdatedSuccessfully": "Profile updated successfully",
+  "save": "Save",
+  "email": "Email",
+  "resetPassword": "Reset Password",
+  "newPassword": "New Password",
+  "passwordChangedSuccessfully": "Password changed successfully",
+  "update": "Update",
+  "signOut": "Sign Out",
+  "eventopiaAnalytics": "Eventopia Analytics",
+  "report": "REPORT",
+  "eventDetails": "Event Details",
+  "nameDetail": "Name: {name}",
+  "@nameDetail": {
+    "description": "Text for nameDetail",
+    "placeholders": {
+      "name": {
+        "type": "String",
+        "example": "name"
+      }
+    }
+  },
+  "dateDetail": "Date: {date}",
+  "@dateDetail": {
+    "description": "Text for dateDetail",
+    "placeholders": {
+      "date": {
+        "type": "String",
+        "example": "date"
+      }
+    }
+  },
+  "organizerDetail": "Organizer: {organizer}",
+  "@organizerDetail": {
+    "description": "Text for organizerDetail",
+    "placeholders": {
+      "organizer": {
+        "type": "String",
+        "example": "organizer"
+      }
+    }
+  },
+  "locationDetail": "Location: {location}",
+  "@locationDetail": {
+    "description": "Text for locationDetail",
+    "placeholders": {
+      "location": {
+        "type": "String",
+        "example": "location"
+      }
+    }
+  },
+  "kpi": "Key Performance Indicators",
+  "metric": "Metric",
+  "value": "Value",
+  "totalTicketsSold": "Total Tickets Sold",
+  "totalRevenue": "Total Revenue",
+  "occupancyRate": "Occupancy Rate",
+  "occupancyProgress": "{title} occupancy {percent}%",
+  "@occupancyProgress": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      },
+      "percent": {
+        "type": "String"
+      }
+    }
+  },
+  "availableSeats": "Available Seats",
+  "salesByTicketCategory": "Sales by Ticket Category",
+  "category": "Category",
+  "ticketsSold": "Tickets Sold",
+  "generatedOnBySystem": "Generated on {date} by Eventopia System",
+  "@generatedOnBySystem": {
+    "description": "Text for generatedOnBySystem",
+    "placeholders": {
+      "date": {
+        "type": "String",
+        "example": "date"
+      }
+    }
+  },
+  "failedToGeneratePdf": "Failed to generate PDF: {error}",
+  "@failedToGeneratePdf": {
+    "description": "Text for failedToGeneratePdf",
+    "placeholders": {
+      "error": {
+        "type": "String",
+        "example": "error"
+      }
+    }
+  },
+  "reportsAndAnalytics": "Reports & Analytics",
+  "noEventsToShowAnalytics": "No events available to show analytics.",
+  "selectEvent": "Select Event",
+  "ofTotal": "of {total} total",
+  "@ofTotal": {
+    "description": "Text for ofTotal",
+    "placeholders": {
+      "total": {
+        "type": "String",
+        "example": "total"
+      }
+    }
+  },
+  "occupancy": "Occupancy",
+  "available": "Available",
+  "sevenDayRevenue": "7-Day Revenue",
+  "salesByCategory": "Sales by Category",
+  "passwordChangedPleaseLogin": "Password changed successfully. Please login.",
+  "changePassword": "Change Password",
+  "enterNewPasswordDesc": "Enter a new password below to secure your account.",
+  "entryApprovedFor": "Entry approved for \"{title}\"",
+  "@entryApprovedFor": {
+    "description": "Text for entryApprovedFor",
+    "placeholders": {
+      "title": {
+        "type": "String",
+        "example": "title"
+      }
+    }
+  },
+  "qrCodeNotFound": "QR code not found or already used.",
+  "qrCheckIn": "QR Check-In",
+  "scanQrAtGate": "Scan QR at entry gate",
+  "manualQrCodeEntry": "Manual QR Code Entry",
+  "enterQrCode": "Enter QR Code",
+  "validateEntry": "Validate Entry",
+  "noEventsAvailable": "No events available",
+  "all": "All",
+  "deleteUser": "Delete User",
+  "areYouSureDeleteUser": "Are you sure you want to delete {name}?",
+  "@areYouSureDeleteUser": {
+    "description": "Text for areYouSureDeleteUser",
+    "placeholders": {
+      "name": {
+        "type": "String",
+        "example": "name"
+      }
+    }
+  },
+  "delete": "Delete",
+  "editUser": "Edit User",
+  "organisation": "Organisation",
+  "manageEvent": "Manage Event",
+  "changeStatus": "Change Status",
+  "deleteEvent": "Delete",
+  "areYouSureDeleteEvent": "Are you sure you want to delete this event? This action cannot be undone.",
+  "eventRequestCard": "Event request card",
+  "saveChanges": "Save ",
+  "scanAttendeeQr": "Scan Attendee QR",
+  "cameraOpensHere": "Camera opens here",
+  "mobileScannerPlugin": "(mobile_scanner plugin)",
+  "close": "Close",
+  "organiserRegistered": "Organiser Registered!",
+  "organiserLoginCredentialsAssigned": "Login credentials have been assigned to the organiser. They can use the default password (Org@1234) and change it on first login.",
+  "done": "Done",
+  "registerNewOrganiser": "Register New Organiser",
+  "defaultPasswordAssignedDesc": "A default password (Org@1234) will be assigned and emailed to the organiser. They must change it on first login.",
+  "required": "Required",
+  "invalidEmail": "Invalid email",
+  "organisationNameOptional": "Organisation Name (optional)",
+  "registerOrganiser": "Register Organiser",
+  "myEvents": "My Events",
+  "analytics": "Analytics",
+  "organiser": "Organiser",
+  "nprParam": "NPR {param}",
+  "@nprParam": {
+    "description": "Text for nprParam",
+    "placeholders": {
+      "param": {
+        "type": "String",
+        "example": "param"
+      }
+    }
+  },
+  "promoCodes": "Promo Codes",
+  "createAction": "+ Create",
+  "noEventsYet": "No events yet.",
+  "tapCreateToAddFirstEvent": "Tap \"+ Create\" to add your first event.",
+  "create": "Create",
+  "eventAnalyticsReport": "EVENT ANALYTICS REPORT",
+  "nameParam": "Name: {param}",
+  "@nameParam": {
+    "description": "Text for nameParam",
+    "placeholders": {
+      "param": {
+        "type": "String",
+        "example": "param"
+      }
+    }
+  },
+  "dateParam": "Date: {param}",
+  "@dateParam": {
+    "description": "Text for dateParam",
+    "placeholders": {
+      "param": {
+        "type": "String",
+        "example": "param"
+      }
+    }
+  },
+  "kpis": "Key Performance Indicators (KPIs)",
+  "generatedBySystem": "Generated by Eventopia System",
+  "createEventsToSeeAnalytics": "Create events to see analytics.",
+  "downloadPdfReport": "Download PDF Report",
+  "ofParamTotal": "of {param} total",
+  "@ofParamTotal": {
+    "description": "Text for ofParamTotal",
+    "placeholders": {
+      "param": {
+        "type": "String",
+        "example": "param"
+      }
+    }
+  },
+  "ticketVerified": "Ticket Verified",
+  "scanFailed": "Scan Failed",
+  "ok": "OK",
+  "scanTicket": "Scan Ticket",
+  "requiredField": "Required",
+  "eventAddedSuccessfully": "Event has been added successfully!",
+  "createNewEvent": "Create New Event",
+  "eventPoster": "Event Poster",
+  "change": "Change",
+  "remove": "Remove",
+  "tapToAddEventPoster": "Tap to add event poster",
+  "recommendedPosterSize": "Recommended: 1200 × 800 px",
+  "eventTitle": "Event Title",
+  "description": "Description",
+  "location": "Location",
+  "date": "Date",
+  "start": "Start",
+  "end": "End",
+  "ticketCategories": "Ticket Categories",
+  "priceNpr": "Price (NPR)",
+  "capacity": "Capacity",
+  "promoCodeOptional": "Promo Code (Optional)",
+  "codeExample": "Code (e.g. SAVE20)",
+  "discountPercentage": "Discount %",
+  "createEvent": "Create Event",
+  "minParam": "Min {param}",
+  "@minParam": {
+    "description": "Text for minParam",
+    "placeholders": {
+      "param": {
+        "type": "String",
+        "example": "param"
+      }
+    }
+  },
+  "editEvent": "Edit Event",
+  "time": "Time",
+  "seats": "Seats",
+  "ticketTypes": "Ticket Types",
+  "paramOff": "{param}% off",
+  "@paramOff": {
+    "description": "Text for paramOff",
+    "placeholders": {
+      "param": {
+        "type": "String",
+        "example": "param"
+      }
+    }
+  },
+  "explore": "Explore",
+  "tickets": "Tickets",
+  "discoverConnectCelebrate": "Discover. Connect. Celebrate.",
+  "myBookings": "My Bookings",
+  "totalSpent": "Total Spent",
+  "nprAmount": "NPR {amount}",
+  "@nprAmount": {
+    "description": "Text for nprAmount",
+    "placeholders": {
+      "amount": {
+        "type": "String",
+        "example": "amount"
+      }
+    }
+  },
+  "upcomingEvents": "Upcoming Events",
+  "noUpcomingEvents": "No upcoming events.",
+  "bookings": "Bookings",
+  "exploreEvents": "Explore Events",
+  "searchEvents": "Search events…",
+  "noEventsMatchSearch": "No events match your search.",
+  "eventUpper": "EVENT",
+  "completedUpper": "COMPLETED",
+  "upcomingUpper": "UPCOMING",
+  "about": "About",
+  "availablePromoCodes": "Available Promo Codes",
+  "useCodeForDiscount": "Use code {code} for {discount}% off!",
+  "@useCodeForDiscount": {
+    "description": "Text for useCodeForDiscount",
+    "placeholders": {
+      "code": {
+        "type": "String",
+        "example": "code"
+      },
+      "discount": {
+        "type": "String",
+        "example": "discount"
+      }
+    }
+  },
+  "remainingCount": "{count} remaining",
+  "@remainingCount": {
+    "description": "Text for remainingCount",
+    "placeholders": {
+      "count": {
+        "type": "String",
+        "example": "count"
+      }
+    }
+  },
+  "eventEnded": "Event Ended",
+  "bookNow": "Book Now",
+  "notAvailable": "Not Available",
+  "myTickets": "My Tickets",
+  "upcoming": "Upcoming",
+  "past": "Past",
+  "cancelled": "Cancelled",
+  "noTicketsYet": "No tickets yet.",
+  "notifications": "Notifications",
+  "noNotificationsYet": "No notifications yet",
+  "payment": "Payment",
+  "otpSentMessage": "OTP has been sent to your registered mobile/email. (Default: 1234)",
+  "invalidOtpMessage": "Invalid OTP. Please try again.",
+  "orderSummary": "Order Summary",
+  "enterPin": "Enter PIN",
+  "event": "Event",
+  "ticket": "Ticket",
+  "categoryQuantity": "{category} × {quantity}",
+  "@categoryQuantity": {
+    "description": "Text for categoryQuantity",
+    "placeholders": {
+      "category": {
+        "type": "String",
+        "example": "category"
+      },
+      "quantity": {
+        "type": "String",
+        "example": "quantity"
+      }
+    }
+  },
+  "subtotal": "Subtotal",
+  "promoCode": "Promo: {code}",
+  "@promoCode": {
+    "description": "Text for promoCode",
+    "placeholders": {
+      "code": {
+        "type": "String",
+        "example": "code"
+      }
+    }
+  },
+  "negativeNprAmount": "- NPR {amount}",
+  "@negativeNprAmount": {
+    "description": "Text for negativeNprAmount",
+    "placeholders": {
+      "amount": {
+        "type": "String",
+        "example": "amount"
+      }
+    }
+  },
+  "totalToPay": "Total to Pay",
+  "selectPaymentMethod": "Select Payment Method",
+  "card": "Card",
+  "esewa": "eSewa",
+  "pay": "Pay",
+  "enterOtpToConfirm": "Enter OTP to Confirm Payment",
+  "otpLabel": "OTP : 1234",
+  "verifyAndPay": "Verify & Pay – NPR {amount}",
+  "@verifyAndPay": {
+    "description": "Text for verifyAndPay",
+    "placeholders": {
+      "amount": {
+        "type": "String",
+        "example": "amount"
+      }
+    }
+  },
+  "maxSeatsAllowed": "Maximum 10 seats allowed per booking.",
+  "chooseTicketCategoryFirst": "Choose Ticket Category First",
+  "categoryPrice": "{category} (NPR {price})",
+  "@categoryPrice": {
+    "description": "Text for categoryPrice",
+    "placeholders": {
+      "category": {
+        "type": "String",
+        "example": "category"
+      },
+      "price": {
+        "type": "String",
+        "example": "price"
+      }
+    }
+  },
+  "selected": "Selected",
+  "booked": "Booked",
+  "pleaseSelectCategory": "Please select a ticket category to choose seats",
+  "stageUpper": "STAGE",
+  "controlRoomUpper": "CONTROL ROOM",
+  "seatsSelected": "{count} seat(s) selected",
+  "@seatsSelected": {
+    "description": "Text for seatsSelected",
+    "placeholders": {
+      "count": {
+        "type": "String",
+        "example": "count"
+      }
+    }
+  },
+  "continueAction": "Continue",
+  "eventopiaUpper": "EVENTOPIA",
+  "eTicketUpper": "E-TICKET",
+  "confirmedUpper": "CONFIRMED",
+  "detail": "Detail",
+  "info": "Info",
+  "ticketType": "Ticket Type",
+  "quantity": "Quantity",
+  "section": "Section",
+  "discount": "Discount",
+  "totalPaid": "Total Paid",
+  "bookedOn": "Booked On",
+  "reference": "Reference",
+  "scanQrAtEntry": "Scan this QR at entry",
+  "generatedBy": "Generated by Eventopia on {date}",
+  "@generatedBy": {
+    "description": "Text for generatedBy",
+    "placeholders": {
+      "date": {
+        "type": "String",
+        "example": "date"
+      }
+    }
+  },
+  "ticketConfirmed": "Ticket Confirmed!",
+  "showQrAtEntry": "Show this QR code at entry",
+  "promoApplied": "Code applied! {discount}% discount",
+  "@promoApplied": {
+    "description": "Text for promoApplied",
+    "placeholders": {
+      "discount": {
+        "type": "String",
+        "example": "discount"
+      }
+    }
+  },
+  "invalidPromoCode": "Invalid or expired code",
+  "bookingFailed": "Booking failed. Please try again.",
+  "selectTicketType": "Select Ticket Type",
+  "countLeft": "{count} left",
+  "@countLeft": {
+    "description": "Text for countLeft",
+    "placeholders": {
+      "count": {
+        "type": "String",
+        "example": "count"
+      }
+    }
+  },
+  "apply": "Apply",
+  "discountWithPercent": "Discount ({discount}%)",
+  "@discountWithPercent": {
+    "description": "Text for discountWithPercent",
+    "placeholders": {
+      "discount": {
+        "type": "String",
+        "example": "discount"
+      }
+    }
+  },
+  "total": "Total",
+  "selectATicketType": "Select a ticket type",
+  "proceedToPay": "Proceed to pay",
+  "eventSoldOut": "This event is sold out.",
+  "onWaitlist": "You're on the waitlist!",
+  "joinWaitlistDesc": "Join the waitlist — we'll notify you when tickets become available.",
+  "joinWaitlist": "Join Waitlist",
+  "quantityMultiplier": "× {quantity}",
+  "@quantityMultiplier": {
+    "description": "Text for quantityMultiplier",
+    "placeholders": {
+      "quantity": {
+        "type": "String",
+        "example": "quantity"
+      }
+    }
+  },
+  "downloadTicket": "Download Ticket",
+  "bookingCancelledRefunded": "This booking is cancelled. The refund has been done.",
+  "bookingCancelledRefundedSuccess": "Booking cancelled. The refund has been done.",
+  "cannotCancelWindowPassed": "Cannot cancel — 7-day window has passed.",
+  "cancelBooking": "Cancel Booking",
+
+  "ofTotalSeats": "of {total} total seats",
+  "@ofTotalSeats": {
+    "description": "Text for ofTotalSeats",
+    "placeholders": {
+      "total": {
+        "type": "String",
+        "example": "200"
+      }
+    }
+  },
+  "categorySalesProgress": "{category}: {sold} tickets sold",
+  "@categorySalesProgress": {
+    "description": "Accessibility label for sales progress",
+    "placeholders": {
+      "category": {
+        "type": "String",
+        "example": "VIP"
+      },
+      "sold": {
+        "type": "String",
+        "example": "25"
+      }
+    }
+  },
+  "newBooking": "New Booking",
+  "newBookingMessage": "{attendee} • {quantity} ticket(s) • {eventTitle}",
+  "@newBookingMessage": {
+    "placeholders": {
+      "attendee": { "type": "String" },
+      "quantity": { "type": "int" },
+      "eventTitle": { "type": "String" }
+    }
+  },
+  "ticketsAvailable": "Tickets Available",
+  "waitlistPosition": "Position {position}",
+  "@waitlistPosition": {
+    "placeholders": { "position": { "type": "String" } }
+  },
+  "eventStatusUpdated": "Event Status Updated",
+  "eventApprovedByAdmin": "Your event \"{eventTitle}\" has been approved by an admin.",
+  "@eventApprovedByAdmin": {
+    "placeholders": { "eventTitle": { "type": "String" } }
+  },
+  "eventStatusChanged": "Your event \"{eventTitle}\" is now {status}.",
+  "@eventStatusChanged": {
+    "placeholders": {
+      "eventTitle": { "type": "String" },
+      "status": { "type": "String" }
+    }
+  }
+}
+

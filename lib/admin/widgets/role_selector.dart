@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:ems_app/l10n/app_localizations.dart';
 
 import '../../models.dart';
 
@@ -18,27 +19,32 @@ class RoleSelector extends StatelessWidget {
     final isSelected = selected == role;
 
     return Expanded(
-      child: GestureDetector(
-        onTap: () => onChanged(role),
-        child: Container(
-          margin: const EdgeInsets.symmetric(horizontal: 5),
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            border: Border.all(
-              color: isSelected ? Colors.deepPurple : Colors.grey.shade300,
-              width: 2,
+      child: Semantics(
+        button: true,
+        selected: isSelected,
+        label: title,
+        child: GestureDetector(
+          onTap: () => onChanged(role),
+          child: Container(
+            margin: const EdgeInsets.symmetric(horizontal: 5),
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              border: Border.all(
+                color: isSelected ? Colors.deepPurple : Colors.grey.shade300,
+                width: 2,
+              ),
+              borderRadius: BorderRadius.circular(12),
+              color: isSelected
+                  ? Colors.deepPurple.withOpacity(0.1)
+                  : Colors.white,
             ),
-            borderRadius: BorderRadius.circular(12),
-            color: isSelected
-                ? Colors.deepPurple.withOpacity(0.1)
-                : Colors.white,
-          ),
-          child: Center(
-            child: Text(
-              title,
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: isSelected ? Colors.deepPurple : Colors.black,
+            child: Center(
+              child: Text(
+                title,
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: isSelected ? Colors.deepPurple : Colors.black,
+                ),
               ),
             ),
           ),
@@ -49,11 +55,12 @@ class RoleSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     return Row(
       children: [
-        if (showAdmin) role("Admin", UserRole.admin),
-        role("Organizer", UserRole.organizer),
-        role("Attendee", UserRole.attendee),
+        if (showAdmin) role(l.admin, UserRole.admin),
+        role(l.organizer, UserRole.organizer),
+        role(l.attendee, UserRole.attendee),
       ],
     );
   }
