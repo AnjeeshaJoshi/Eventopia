@@ -5,6 +5,7 @@ import 'package:ems_app/providers/auth_provider.dart';
 import 'package:ems_app/providers/event_provider.dart';
 import 'package:ems_app/providers/booking_provider.dart';
 import 'package:ems_app/l10n/app_localizations.dart';
+import 'package:ems_app/models/event_model.dart';
 import '../theme.dart';
 import '../widgets.dart';
 import 'widgets/create_event_sheet.dart';
@@ -15,6 +16,112 @@ import '../attendee/screens/notifications_screen.dart';
 class OrgHome extends StatelessWidget {
   const OrgHome({super.key});
 
+  Future<void> _chooseEventAndScan(
+    BuildContext context,
+    List<EventModel> events,
+    String organizerId,
+  ) async {
+    final l = AppLocalizations.of(context)!;
+    if (events.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l.noEventsYet)),
+      );
+      return;
+    }
+
+    final event = await showModalBottomSheet<EventModel>(
+      context: context,
+      backgroundColor: C.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (sheetContext) => SafeArea(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.sizeOf(sheetContext).height * .70,
+          ),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                child: Container(
+                  height: 4,
+                  width: 40,
+                  decoration: BoxDecoration(
+                    color: C.border,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ),
+              ),
+                const SizedBox(height: 20),
+                Text(
+                l.selectEvent,
+                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
+              ),
+                const SizedBox(height: 4),
+                Text(
+                'Select an event before scanning its attendee ticket.',
+                style: const TextStyle(color: C.t2),
+              ),
+                const SizedBox(height: 16),
+                Expanded(
+                child: ListView.separated(
+                  itemCount: events.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: 8),
+                  itemBuilder: (_, index) {
+                    final event = events[index];
+                    return ListTile(
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 4,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        side: const BorderSide(color: C.border),
+                      ),
+                      leading: const CircleAvatar(
+                        backgroundColor: Color(0x1A7C3AED),
+                        child: Icon(Icons.event_rounded, color: C.violet),
+                      ),
+                      title: Text(
+                        event.title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(fontWeight: FontWeight.w600),
+                      ),
+                      subtitle: Text(
+                        '${DateFormat('MMM d, y').format(event.date)} • ${event.venue}',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      trailing: const Icon(Icons.qr_code_scanner_rounded),
+                      onTap: () => Navigator.pop(sheetContext, event),
+                    );
+                  },
+                ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+
+    if (event != null && context.mounted) {
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => QrScannerScreen(
+            event: event,
+            organizerId: organizerId,
+          ),
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
@@ -24,9 +131,7 @@ class OrgHome extends StatelessWidget {
 
     if (authProvider.currentUser == null) {
       return const Scaffold(
-        body: Center(
-          child: CircularProgressIndicator(),
-        ),
+        body: AppLoadingView(),
       );
     }
 
@@ -71,26 +176,8 @@ class OrgHome extends StatelessWidget {
                       Icons.qr_code_scanner_rounded,
                       color: Colors.white,
                     ),
-                    onPressed: () {
-                      if (myEvents.isEmpty) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(l.noEventsYet),
-                          ),
-                        );
-                        return;
-                      }
-
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => QrScannerScreen(
-                            event: myEvents.first,
-                            organizerId: user.uid,
-                          ),
-                        ),
-                      );
-                    },
+                    onPressed: () =>
+                        _chooseEventAndScan(context, myEvents, user.uid),
                   ),
                 ),
               ),
@@ -281,56 +368,16 @@ class OrgHome extends StatelessWidget {
                     )
                   else
                     ...myEvents.map(
-                          (e) => Padding(
+                      (e) => Padding(
                         padding: const EdgeInsets.only(bottom: 12),
-                        child: Column(
-                          children: [
-                            EventCard(
-                              event: e,
-                              onTap: () => showModalBottomSheet(
-                                context: context,
-                                isScrollControlled: true,
-                                backgroundColor: Colors.transparent,
-                                builder: (_) =>
-                                    EventDetailSheet(event: e),
-                              ),
-                            ),
-
-                            const SizedBox(height: 10),
-                            Container(
-                              decoration: BoxDecoration(
-                                gradient: C.gPrimary,
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: ElevatedButton.icon(
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.transparent,
-                                  shadowColor: Colors.transparent,
-                                  foregroundColor: Colors.white,
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 24,
-                                    vertical: 18,
-                                  ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                ),
-                                icon: const Icon(Icons.qr_code_scanner),
-                                label: Text(l.scanTicket),
-                                onPressed: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (_) => QrScannerScreen(
-                                        event: e,
-                                        organizerId: user.uid,
-                                      ),
-                                    ),
-                                  );
-                                },
-                              ),
-                            )
-                          ],
+                        child: EventCard(
+                          event: e,
+                          onTap: () => showModalBottomSheet(
+                            context: context,
+                            isScrollControlled: true,
+                            backgroundColor: Colors.transparent,
+                            builder: (_) => EventDetailSheet(event: e),
+                          ),
                         ),
                       ),
                     ),

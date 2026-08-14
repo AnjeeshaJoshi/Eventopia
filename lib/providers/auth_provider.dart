@@ -40,9 +40,12 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> login(String email, String password) async {
+  /// Returns true only when Firebase authenticates the supplied credentials
+  /// and their user profile can be loaded.
+  Future<bool> login(String email, String password) async {
     _isLoading = true;
     _error = null;
+    _currentUser = null;
     notifyListeners();
 
     try {
@@ -50,8 +53,14 @@ class AuthProvider extends ChangeNotifier {
       // Populate the role before LoginScreen decides which dashboard to open.
       // The Firestore stream below keeps it current after this initial read.
       _currentUser = await _firestoreService.getUser(credential.user!.uid);
+      if (_currentUser == null) {
+        _error = 'Your account profile could not be loaded.';
+        return false;
+      }
+      return true;
     } catch (e) {
       _error = ErrorHandler.getErrorMessage(e);
+      return false;
     } finally {
       _isLoading = false;
       notifyListeners();

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:intl/intl.dart';
 import 'package:ems_app/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
@@ -9,6 +10,7 @@ import '../../theme.dart';
 import '../../widgets.dart';
 import '../widgets/booking_sheet.dart';
 import '../widgets/soldout_sheet.dart';
+import '../widgets/event_location_map.dart';
 import 'seat_layout_screen.dart';
 
 class EventDetailScreen extends StatelessWidget {
@@ -127,12 +129,12 @@ class EventDetailScreen extends StatelessWidget {
                       ),
                     ),
                   ],
-                ),
+                ).animate().fadeIn(duration: 300.ms).slideY(begin: .08, end: 0),
                 const SizedBox(height: 12),
                 Text(
                   event.title,
                   style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w800, color: C.t1, height: 1.2),
-                ),
+                ).animate(delay: 80.ms).fadeIn(duration: 350.ms).slideX(begin: -.06, end: 0),
                 const SizedBox(height: 20),
                 _buildInfoRow(
                   Icons.calendar_month_rounded,
@@ -145,6 +147,13 @@ class EventDetailScreen extends StatelessWidget {
                 _buildInfoRow(Icons.access_time_rounded, '${event.start.format(context)} – ${event.end.format(context)}'),
                 const SizedBox(height: 12),
                 _buildInfoRow(Icons.location_on_rounded, event.venue),
+                if (event.latitude != null && event.longitude != null) ...[
+                  const SizedBox(height: 24),
+                  EventLocationMap(event: event)
+                      .animate(delay: 160.ms)
+                      .fadeIn(duration: 400.ms)
+                      .slideY(begin: .06, end: 0),
+                ],
                 const SizedBox(height: 24),
                 SectionTitle(title: l.about, action: null),
                 const SizedBox(height: 12),

@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
@@ -10,6 +11,7 @@ import '../../models.dart';
 import '../../theme.dart';
 import '../../widgets.dart';
 import 'event_poster_picker.dart';
+import 'location_picker_screen.dart';
 
 class EditEventSheet extends StatefulWidget {
   final EventModel event;
@@ -25,6 +27,8 @@ class _EditEventSheetState extends State<EditEventSheet> {
   late final TextEditingController _title;
   late final TextEditingController _desc;
   late final TextEditingController _location;
+  late final TextEditingController _latitude;
+  late final TextEditingController _longitude;
 
   late final TextEditingController _promoCode;
   late final TextEditingController _promoDiscount;
@@ -47,6 +51,8 @@ class _EditEventSheetState extends State<EditEventSheet> {
     _title = TextEditingController(text: widget.event.title);
     _desc = TextEditingController(text: widget.event.description);
     _location = TextEditingController(text: widget.event.venue);
+    _latitude = TextEditingController(text: widget.event.latitude?.toString() ?? '');
+    _longitude = TextEditingController(text: widget.event.longitude?.toString() ?? '');
     
     final existingPromo = widget.event.promoCodes.isNotEmpty ? widget.event.promoCodes.first : null;
     _promoCode = TextEditingController(text: existingPromo?.code ?? '');
@@ -72,6 +78,8 @@ class _EditEventSheetState extends State<EditEventSheet> {
     _title.dispose();
     _desc.dispose();
     _location.dispose();
+    _latitude.dispose();
+    _longitude.dispose();
     _promoCode.dispose();
     _promoDiscount.dispose();
     for (var c in _prices.values) { c.dispose(); }
@@ -92,13 +100,42 @@ class _EditEventSheetState extends State<EditEventSheet> {
     }
   }
 
+  Future<void> _pickLocation() async {
+    final latitude = double.tryParse(_latitude.text);
+    final longitude = double.tryParse(_longitude.text);
+    final selected = await Navigator.push<EventLocationSelection>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => LocationPickerScreen(
+          initialLocation: latitude == null || longitude == null
+              ? null
+              : LatLng(latitude, longitude),
+          initialLocationName: _location.text,
+        ),
+      ),
+    );
+    if (selected != null && mounted) {
+      setState(() {
+        _location.text = selected.name;
+        _latitude.text = selected.coordinates.latitude.toStringAsFixed(6);
+        _longitude.text = selected.coordinates.longitude.toStringAsFixed(6);
+      });
+    }
+  }
+
   Future<void> _update() async {
     if (!_form.currentState!.validate()) return;
+    final latitude = double.tryParse(_latitude.text);
+    final longitude = double.tryParse(_longitude.text);
+    if (latitude == null || longitude == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Choose the event location on the map.')),
+      );
+      return;
+    }
     setState(() => _loading = true);
     
     try {
-      await Future.delayed(const Duration(milliseconds: 600));
-
       final types = TicketCategory.values.map((cat) {
         final matches = widget.event.ticketTypes.where((t) => t.category == cat);
         final oldType = matches.isEmpty ? null : matches.first;
@@ -135,6 +172,8 @@ class _EditEventSheetState extends State<EditEventSheet> {
             title: _title.text.trim(),
             description: _desc.text.trim(),
             location: _location.text.trim(),
+            latitude: latitude,
+            longitude: longitude,
             date: _date,
             start: _start,
             end: _end,
@@ -324,11 +363,27 @@ class _EditEventSheetState extends State<EditEventSheet> {
                 validator: (v) => v?.trim().isEmpty == true ? 'Required' : null,
               ),
               const SizedBox(height: 14),
-              AppField(
-                label: l.location,
-                controller: _location,
-                prefix: Icons.location_on_outlined,
-                validator: (v) => v?.trim().isEmpty == true ? 'Required' : null,
+              Text(l.location,
+                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+              const SizedBox(height: 8),
+              OutlinedButton.icon(
+                onPressed: _pickLocation,
+                icon: const Icon(Icons.map_rounded),
+                label: Text(
+                  _latitude.text.isEmpty
+                      ? 'Choose location on map'
+                      : _location.text,
+                ),
+                style: OutlinedButton.styleFrom(
+                  minimumSize: const Size.fromHeight(48),
+                  foregroundColor: C.violet,
+                  side: const BorderSide(color: C.violet),
+                ),
+              ),
+              const SizedBox(height: 6),
+              const Text(
+                'Search for a place or tap the map to set the event location.',
+                style: TextStyle(color: C.t2, fontSize: 12),
               ),
               const SizedBox(height: 14),
 

@@ -9,6 +9,8 @@ import '../widgets.dart';
 import 'register_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:ems_app/providers/auth_provider.dart';
+import 'package:ems_app/providers/booking_provider.dart';
+import 'package:ems_app/providers/user_provider.dart';
 import '../utils/error_handler.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -35,6 +37,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Future<void> _login() async {
     FocusScope.of(context).unfocus();
+    final l = AppLocalizations.of(context)!;
 
     if (!_form.currentState!.validate()) return;
 
@@ -45,7 +48,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
     try {
       final authProvider = context.read<AuthProvider>();
-      await authProvider.login(
+      final didAuthenticate = await authProvider.login(
         _email.text.trim(),
         _pwd.text,
       );
@@ -54,11 +57,16 @@ class _LoginScreenState extends State<LoginScreen> {
 
       setState(() => _loading = false);
 
-      final user = authProvider.currentUser;
-      if (user == null) {
-        setState(() => _error = authProvider.error);
+      if (!didAuthenticate) {
+        setState(() => _error = authProvider.error ?? l.invalidEmail);
         return;
       }
+      final user = authProvider.currentUser!;
+
+      // Start role-specific streams before changing routes. This means the
+      // first dashboard frame can render with data already on its way instead
+      // of waiting for its post-frame callback.
+      _primeDashboardData(user);
 
       if (user.role == UserRole.organizer && user.mustChangePassword) {
         Navigator.pushReplacementNamed(context, '/organizer');
@@ -165,7 +173,11 @@ class _LoginScreenState extends State<LoginScreen> {
                                     validator: (v) =>
                                         (v == null || v.trim().isEmpty)
                                             ? l.emailIsRequired
-                                            : null,
+                                            : RegExp(
+                                                        r'^[^\s@]+@[^\s@]+\.[^\s@]+$')
+                                                    .hasMatch(v.trim())
+                                                ? null
+                                                : l.enterValidEmail,
                                   ),
                                   const SizedBox(height: 14),
                                   AppField(
@@ -185,9 +197,13 @@ class _LoginScreenState extends State<LoginScreen> {
                                       onPressed: () =>
                                           setState(() => _hidePwd = !_hidePwd),
                                     ),
-                                    validator: (v) => (v == null || v.isEmpty)
-                                        ? l.passwordIsRequired
-                                        : null,
+                                    validator: (v) {
+                                      if (v == null || v.isEmpty) {
+                                        return l.passwordIsRequired;
+                                      }
+                                      if (v.length < 6) return l.minimumSixChars;
+                                      return null;
+                                    },
                                   ),
                                   const SizedBox(height: 6),
                                   Align(
@@ -293,5 +309,23 @@ class _LoginScreenState extends State<LoginScreen> {
     };
 
     Navigator.pushReplacementNamed(context, route);
+  }
+
+  void _primeDashboardData(UserModel user) {
+    final bookings = context.read<BookingProvider>();
+    switch (user.role) {
+      case UserRole.attendee:
+        bookings.listenToBookings(userId: user.uid);
+        bookings.listenToNotifications(user.uid);
+        break;
+      case UserRole.organizer:
+        bookings.listenToNotifications(user.uid);
+        break;
+      case UserRole.admin:
+        context.read<UserProvider>().fetchUsers();
+        bookings.listenToBookings();
+        bookings.listenToNotifications(user.uid);
+        break;
+    }
   }
 }

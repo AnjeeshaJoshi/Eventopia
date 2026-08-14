@@ -8,6 +8,8 @@ class EventModel {
   final String description;
   final String category;
   final String venue;
+  final double? latitude;
+  final double? longitude;
   final DateTime date;
   final TimeOfDay start;
   final TimeOfDay end;
@@ -26,6 +28,8 @@ class EventModel {
     required this.description,
     this.category = '',
     required this.venue,
+    this.latitude,
+    this.longitude,
     required this.date,
     required this.start,
     required this.end,
@@ -57,6 +61,8 @@ class EventModel {
       description: json['description'] as String,
       category: json['category'] as String? ?? '',
       venue: json['venue'] as String,
+      latitude: (json['latitude'] as num?)?.toDouble(),
+      longitude: (json['longitude'] as num?)?.toDouble(),
       date: (json['date'] as Timestamp).toDate(),
       start: parseTime(json['start'] as String),
       end: parseTime(json['end'] as String),
@@ -81,6 +87,8 @@ class EventModel {
       'description': description,
       'category': category,
       'venue': venue,
+      'latitude': latitude,
+      'longitude': longitude,
       'date': Timestamp.fromDate(date),
       'start': formatTime(start),
       'end': formatTime(end),
@@ -101,6 +109,8 @@ class EventModel {
     String? description,
     String? category,
     String? venue,
+    double? latitude,
+    double? longitude,
     DateTime? date,
     TimeOfDay? start,
     TimeOfDay? end,
@@ -119,6 +129,8 @@ class EventModel {
       description: description ?? this.description,
       category: category ?? this.category,
       venue: venue ?? this.venue,
+      latitude: latitude ?? this.latitude,
+      longitude: longitude ?? this.longitude,
       date: date ?? this.date,
       start: start ?? this.start,
       end: end ?? this.end,

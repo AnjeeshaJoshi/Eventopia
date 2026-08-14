@@ -9,7 +9,6 @@ import 'firebase_options.dart';
 
 import 'admin/admin_dashboard.dart';
 import 'attendee/attendee_dashboard.dart';
-// import 'auth/app_provider.dart'; // We are replacing this
 import 'organizer/organizer_dashboard.dart';
 import 'splash_screen.dart';
 import 'theme.dart';

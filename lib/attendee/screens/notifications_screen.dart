@@ -9,6 +9,7 @@ import 'package:ems_app/l10n/app_localizations.dart';
 
 import '../../models.dart';
 import '../../theme.dart';
+import '../../widgets.dart';
 
 class NotificationsScreen extends StatelessWidget {
   const NotificationsScreen({super.key});
@@ -21,7 +22,7 @@ class NotificationsScreen extends StatelessWidget {
     final eventProvider = context.watch<EventProvider>();
 
     if (authProvider.currentUser == null) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return const Scaffold(body: AppLoadingView());
     }
     final notifs = List<AppNotification>.from(
       bookingProvider.getUserNotifications(authProvider.currentUser!.uid),

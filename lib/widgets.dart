@@ -1,12 +1,82 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:ems_app/l10n/app_localizations.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'models.dart';
 import 'providers/locale_provider.dart';
 import 'theme.dart';
+
+/// A lightweight, brand-coloured loading indicator used for both full pages
+/// and in-place actions. The staggered dots make waits feel active without
+/// distracting from the task at hand.
+class AppLoadingIndicator extends StatelessWidget {
+  final double dotSize;
+  final Color color;
+  final String? label;
+
+  const AppLoadingIndicator({
+    super.key,
+    this.dotSize = 10,
+    this.color = C.violet,
+    this.label,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final dots = Row(
+      mainAxisSize: MainAxisSize.min,
+      children: List.generate(
+        3,
+        (index) => Container(
+          width: dotSize,
+          height: dotSize,
+          margin: EdgeInsets.symmetric(horizontal: dotSize * .28),
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+        )
+            .animate(
+              delay: Duration(milliseconds: index * 140),
+              onPlay: (controller) => controller.repeat(reverse: true),
+            )
+            .moveY(
+              begin: 0,
+              end: -dotSize * .65,
+              duration: 560.ms,
+              curve: Curves.easeInOut,
+            )
+            .fade(begin: .4, end: 1),
+      ),
+    );
+
+    return Semantics(
+      liveRegion: true,
+      label: label ?? 'Loading',
+      child: label == null
+          ? dots
+          : Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                dots,
+                const SizedBox(height: 14),
+                Text(label!, style: const TextStyle(color: C.t2, fontSize: 13)),
+              ],
+            ),
+    );
+  }
+}
+
+class AppLoadingView extends StatelessWidget {
+  final String? label;
+
+  const AppLoadingView({super.key, this.label});
+
+  @override
+  Widget build(BuildContext context) => Center(
+        child: AppLoadingIndicator(label: label),
+      );
+}
 
 /// A compact, always-readable language picker. It is deliberately labelled
 /// with both scripts so it remains usable before the app language changes.
@@ -166,14 +236,18 @@ class GBtn extends StatelessWidget {
               : null,
         ),
         child: Center(
-          child: loading
-              ? const SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(
-                      strokeWidth: 2, color: Colors.white),
-                )
-              : Row(
+          child: AnimatedSwitcher(
+            duration: const Duration(milliseconds: 180),
+            switchInCurve: Curves.easeOut,
+            switchOutCurve: Curves.easeIn,
+            child: loading
+                ? const AppLoadingIndicator(
+                    key: ValueKey('loading'),
+                    dotSize: 6,
+                    color: Colors.white,
+                  )
+                : Row(
+                    key: const ValueKey('label'),
                   mainAxisAlignment: MainAxisAlignment.center,
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -197,8 +271,9 @@ class GBtn extends StatelessWidget {
                         ),
                       ),
                     ),
-                  ],
-                ),
+                    ],
+                  ),
+          ),
         ),
       ),
     );
@@ -882,6 +957,9 @@ class SuccessView extends StatelessWidget {
           ],
         ),
       ),
-    );
+    )
+        .animate()
+        .fade(duration: 320.ms, curve: Curves.easeOut)
+        .slideY(begin: .06, end: 0, duration: 320.ms, curve: Curves.easeOut);
   }
 }

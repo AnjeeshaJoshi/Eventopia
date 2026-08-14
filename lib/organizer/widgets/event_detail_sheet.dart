@@ -10,6 +10,7 @@ import 'package:ems_app/providers/event_provider.dart';
 import 'package:ems_app/l10n/app_localizations.dart';
 import '../../theme.dart';
 import '../../widgets.dart';
+import '../../attendee/widgets/event_location_map.dart';
 import 'edit_event_sheet.dart';
 
 class EventDetailSheet extends StatelessWidget {
@@ -98,9 +99,17 @@ class EventDetailSheet extends StatelessWidget {
                 value:
                     '${event.start.format(context)} – ${event.end.format(context)}'),
             InfoRow(
+                icon: Icons.location_on_rounded,
+                label: l.location,
+                value: event.venue),
+            InfoRow(
                 icon: Icons.event_seat_rounded,
                 label: l.seats,
                 value: '${event.bookedSeats} / ${event.totalSeats}'),
+            if (event.latitude != null && event.longitude != null) ...[
+              const SizedBox(height: 12),
+              EventLocationMap(event: event),
+            ],
             const Divider(color: C.border),
             const SizedBox(height: 12),
             Text(l.ticketTypes,

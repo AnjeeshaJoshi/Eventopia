@@ -207,13 +207,9 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                             ),
                             onPressed: _sending ? null : _resetPassword,
                             child: _sending
-                                ? const SizedBox(
-                                    width: 20,
-                                    height: 20,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      color: Colors.white,
-                                    ),
+                                ? const AppLoadingIndicator(
+                                    dotSize: 6,
+                                    color: Colors.white,
                                   )
                                 : Text(
                                     sendResetLink,

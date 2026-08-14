@@ -47,21 +47,17 @@ class _OrganizerDashboardState extends State<OrganizerDashboard> {
     if (mustChangePassword) {
       return const Scaffold(body: OrgProfile());
     }
-    final pages = <Widget>[
-      const OrgHome(),
-      const OrgEvents(),
-      const OrgAnalytics(),
-      const OrgProfile(),
-    ];
-
     return Scaffold(
       floatingActionButton: const LanguageSwitcher(),
       // Keep this away from the app-bar actions, including Sign Out.
       floatingActionButtonLocation: FloatingActionButtonLocation.startFloat,
-      body: IndexedStack(
-        index: _tab,
-        children: pages,
-      ),
+      // Defer analytics and secondary tabs until the organizer opens them.
+      body: switch (_tab) {
+        0 => const OrgHome(),
+        1 => const OrgEvents(),
+        2 => const OrgAnalytics(),
+        _ => const OrgProfile(),
+      },
 
       bottomNavigationBar: Container(
         decoration: const BoxDecoration(

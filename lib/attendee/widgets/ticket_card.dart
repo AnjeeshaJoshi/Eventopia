@@ -15,6 +15,8 @@ class TicketCard extends StatelessWidget {
     final l = AppLocalizations.of(context)!;
 
     return GCard(
+      // The compact ticket view has less vertical room than the default card.
+      padding: const EdgeInsets.all(14),
       onTap: () => showModalBottomSheet(
         context: context,
         isScrollControlled: true,
@@ -59,15 +61,21 @@ class TicketCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text('NPR ${booking.total.toStringAsFixed(2)}',
+                    Expanded(
+                      child: Text(
+                        'NPR ${booking.total.toStringAsFixed(2)}',
                         style: const TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w700,
-                            color: C.teal)),
+                            color: C.teal),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
                     if (booking.status == BookingStatus.cancelled)
                       Container(
+                        margin: const EdgeInsets.only(left: 6),
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                         decoration: BoxDecoration(
                           color: C.rose.withOpacity(0.1),

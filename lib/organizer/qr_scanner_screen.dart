@@ -1,5 +1,6 @@
 import 'package:ems_app/models/event_model.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:provider/provider.dart';
 import 'package:ems_app/providers/booking_provider.dart';
@@ -24,10 +25,11 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
   final MobileScannerController _controller = MobileScannerController(
     detectionSpeed: DetectionSpeed.noDuplicates,
   );
+  final ImagePicker _imagePicker = ImagePicker();
 
   bool _isProcessing = false;
 
-  void _onDetect(BarcodeCapture capture) async {
+  void _onDetect(BarcodeCapture capture) {
     if (_isProcessing) return;
 
     final List<Barcode> barcodes = capture.barcodes;
@@ -36,11 +38,17 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
     final String? code = barcodes.first.rawValue;
     if (code == null) return;
 
-    setState(() {
-      _isProcessing = true;
-    });
+    _verifyCode(code);
+  }
 
-    _controller.stop();
+  Future<void> _verifyCode(
+    String code, {
+    bool scannerAlreadyStopped = false,
+  }) async {
+    if (_isProcessing && !scannerAlreadyStopped) return;
+
+    if (!_isProcessing) setState(() => _isProcessing = true);
+    if (!scannerAlreadyStopped) await _controller.stop();
 
     final l = AppLocalizations.of(context)!;
     String resultMsg;
@@ -61,35 +69,198 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
     }
 
     if (mounted) {
-      await showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (ctx) => AlertDialog(
-          title: Text(
-            isSuccess ? l.ticketVerified : l.scanFailed,
-            style: TextStyle(
-              color: isSuccess ? C.teal : C.rose,
-            ),
-          ),
-          content: Text(resultMsg),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(ctx);
-              },
-              child: Text(l.ok),
-            ),
-          ],
-        ),
-      );
+      await _showScanResultDialog(isSuccess, resultMsg, l);
 
       if (mounted) {
         setState(() {
           _isProcessing = false;
         });
-        _controller.start();
+        await _controller.start();
       }
     }
+  }
+
+  Future<void> _showScanResultDialog(
+    bool isSuccess,
+    String resultMessage,
+    AppLocalizations l,
+  ) {
+    final normalizedMessage = resultMessage.toLowerCase();
+    final isDuplicate = normalizedMessage.contains('already checked in');
+    final isCancelled = normalizedMessage.contains('cancelled');
+    final isMismatch = normalizedMessage.contains('mismatch') ||
+        normalizedMessage.contains('another organizer') ||
+        normalizedMessage.contains('event not found');
+
+    final color = isSuccess ? C.teal : isMismatch ? C.amber : C.rose;
+    final icon = isSuccess
+        ? Icons.verified_rounded
+        : isDuplicate
+            ? Icons.history_toggle_off_rounded
+            : isCancelled
+                ? Icons.cancel_rounded
+                : isMismatch
+                    ? Icons.event_busy_rounded
+                    : Icons.qr_code_scanner_rounded;
+    final title = isSuccess
+        ? l.ticketVerified
+        : isDuplicate
+            ? 'Ticket already used'
+            : isCancelled
+                ? 'Ticket cancelled'
+                : isMismatch
+                    ? 'Wrong event ticket'
+                    : l.scanFailed;
+    final guidance = isSuccess
+        ? 'Entry approved. You can welcome this attendee in.'
+        : isDuplicate
+            ? 'This ticket has already been checked in and cannot be used again.'
+            : isCancelled
+                ? 'This booking has been cancelled and is not valid for entry.'
+                : isMismatch
+                    ? 'Scan a ticket issued for the selected event.'
+                    : 'Ask the attendee to show a valid Eventopia ticket and try again.';
+
+    return showGeneralDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      barrierLabel: title,
+      barrierColor: Colors.black54,
+      transitionDuration: const Duration(milliseconds: 240),
+      pageBuilder: (dialogContext, _, __) => Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 28),
+          child: Material(
+            color: Colors.transparent,
+            child: Container(
+              width: 360,
+              padding: const EdgeInsets.fromLTRB(24, 28, 24, 20),
+              decoration: BoxDecoration(
+                color: C.surface,
+                borderRadius: BorderRadius.circular(28),
+                boxShadow: const [
+                  BoxShadow(color: Color(0x33000000), blurRadius: 28, offset: Offset(0, 12)),
+                ],
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 76,
+                    height: 76,
+                    decoration: BoxDecoration(
+                      color: color.withOpacity(.14),
+                      shape: BoxShape.circle,
+                      border: Border.all(color: color.withOpacity(.3), width: 2),
+                    ),
+                    child: Icon(icon, color: color, size: 42),
+                  ),
+                  const SizedBox(height: 18),
+                  Text(
+                    title,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 21, fontWeight: FontWeight.w800, color: color),
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    resultMessage,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: C.t1),
+                  ),
+                  const SizedBox(height: 14),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: color.withOpacity(.08),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(Icons.info_outline_rounded, size: 18, color: color),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(guidance, style: const TextStyle(fontSize: 12, color: C.t2, height: 1.35)),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: () => Navigator.pop(dialogContext),
+                      icon: const Icon(Icons.qr_code_scanner_rounded),
+                      label: Text(isSuccess ? 'Scan next ticket' : l.ok),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: color,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+      transitionBuilder: (_, animation, __, child) => FadeTransition(
+        opacity: animation,
+        child: ScaleTransition(
+          scale: CurvedAnimation(parent: animation, curve: Curves.easeOutBack),
+          child: child,
+        ),
+      ),
+    );
+  }
+
+  Future<void> _selectFromGallery() async {
+    if (_isProcessing) return;
+
+    setState(() => _isProcessing = true);
+    await _controller.stop();
+
+    try {
+      final image = await _imagePicker.pickImage(source: ImageSource.gallery);
+      if (image == null) {
+        await _resumeScanner();
+        return;
+      }
+
+      final capture = await _controller.analyzeImage(image.path);
+      final code = capture?.barcodes
+          .map((barcode) => barcode.rawValue)
+          .whereType<String>()
+          .firstOrNull;
+      if (code == null) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('No QR code was found in that image.')),
+          );
+        }
+        await _resumeScanner();
+        return;
+      }
+
+      // The gallery picker has already paused the camera. Continue through the
+      // same verification flow used for a live scan.
+      await _verifyCode(code, scannerAlreadyStopped: true);
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Unable to read the selected image.')),
+        );
+      }
+      await _resumeScanner();
+    }
+  }
+
+  Future<void> _resumeScanner() async {
+    if (mounted) setState(() => _isProcessing = false);
+    await _controller.start();
   }
 
   @override
@@ -104,6 +275,13 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(l.scanTicket),
+        actions: [
+          IconButton(
+            tooltip: 'Select QR image from gallery',
+            icon: const Icon(Icons.photo_library_outlined),
+            onPressed: _isProcessing ? null : _selectFromGallery,
+          ),
+        ],
       ),
       body: Stack(
         children: [

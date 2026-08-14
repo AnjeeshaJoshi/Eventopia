@@ -36,21 +36,18 @@ class AttendeeDashboardState extends State<AttendeeDashboard> {
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
-    final pages = [
-      AttendeeHome(),
-      EventBrowser(),
-      MyTickets(),
-      AttendeeProfile(),
-    ];
-
     return Scaffold(
       floatingActionButton: const LanguageSwitcher(),
       // Keep this away from the app-bar actions, including Sign Out.
       floatingActionButtonLocation: FloatingActionButtonLocation.startFloat,
-      body: IndexedStack(
-      index: _tab,
-        children: pages,
-      ),
+      // Build only the active tab. Creating every tab up front delays the
+      // attendee's first dashboard frame, especially on slower phones.
+      body: switch (_tab) {
+        0 => AttendeeHome(),
+        1 => EventBrowser(),
+        2 => const MyTickets(),
+        _ => AttendeeProfile(),
+      },
 
       bottomNavigationBar: Container(
         decoration: const BoxDecoration(

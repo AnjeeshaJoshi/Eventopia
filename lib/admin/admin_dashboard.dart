@@ -24,13 +24,6 @@ class _AdminDashboardState extends State<AdminDashboard> {
   int _tab = 0;
   bool _loadedAdminData = false;
 
-  final pages = [
-    const AdminHome(),
-    const OrganizerManager(),
-    const EventViewer(),
-    AdminProfile(),
-  ];
-
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -38,7 +31,6 @@ class _AdminDashboardState extends State<AdminDashboard> {
     if (!_loadedAdminData && user?.role == UserRole.admin) {
       _loadedAdminData = true;
       context.read<UserProvider>().fetchUsers();
-      context.read<BookingProvider>().fetchBookings();
       context.read<BookingProvider>().listenToBookings();
       context.read<BookingProvider>().listenToNotifications(user!.uid);
     }
@@ -52,7 +44,12 @@ class _AdminDashboardState extends State<AdminDashboard> {
       floatingActionButton: const LanguageSwitcher(),
       // Keep this away from the app-bar actions, including Sign Out.
       floatingActionButtonLocation: FloatingActionButtonLocation.startFloat,
-      body: pages[_tab],
+      body: switch (_tab) {
+        0 => const AdminHome(),
+        1 => const OrganizerManager(),
+        2 => const EventViewer(),
+        _ => AdminProfile(),
+      },
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _tab,
         onTap: (i) => setState(() => _tab = i),

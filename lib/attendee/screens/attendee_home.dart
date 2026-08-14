@@ -20,7 +20,7 @@ class AttendeeHome extends StatelessWidget {
 
     if (authProvider.currentUser == null) {
       return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
+        body: AppLoadingView(),
       );
     }
     final user = authProvider.currentUser!;

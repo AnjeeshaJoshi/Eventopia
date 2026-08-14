@@ -1,5 +1,6 @@
 import 'package:ems_app/providers/auth_provider.dart';
 import 'package:flutter/material.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
@@ -9,6 +10,7 @@ import '../../models.dart';
 import '../../theme.dart';
 import '../../widgets.dart';
 import 'event_poster_picker.dart';
+import 'location_picker_screen.dart';
 
 class CreateEventSheet extends StatefulWidget {
   const CreateEventSheet({super.key});
@@ -22,6 +24,8 @@ class _CreateEventSheetState extends State<CreateEventSheet> {
   final _title = TextEditingController();
   final _desc = TextEditingController();
   final _location = TextEditingController();
+  final _latitude = TextEditingController();
+  final _longitude = TextEditingController();
   
   // Promo code simple fields
   final _promoCode = TextEditingController();
@@ -55,6 +59,8 @@ class _CreateEventSheetState extends State<CreateEventSheet> {
     _title.dispose();
     _desc.dispose();
     _location.dispose();
+    _latitude.dispose();
+    _longitude.dispose();
     _promoCode.dispose();
     _promoDiscount.dispose();
     _prices.values.forEach((c) => c.dispose());
@@ -70,13 +76,41 @@ class _CreateEventSheetState extends State<CreateEventSheet> {
     if (poster != null && mounted) setState(() => _posterPath = poster);
   }
 
+  Future<void> _pickLocation() async {
+    final latitude = double.tryParse(_latitude.text);
+    final longitude = double.tryParse(_longitude.text);
+    final selected = await Navigator.push<EventLocationSelection>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => LocationPickerScreen(
+          initialLocation: latitude == null || longitude == null
+              ? null
+              : LatLng(latitude, longitude),
+        ),
+      ),
+    );
+    if (selected != null && mounted) {
+      setState(() {
+        _location.text = selected.name;
+        _latitude.text = selected.coordinates.latitude.toStringAsFixed(6);
+        _longitude.text = selected.coordinates.longitude.toStringAsFixed(6);
+      });
+    }
+  }
+
   Future<void> _create() async {
     if (!_form.currentState!.validate()) return;
+    final latitude = double.tryParse(_latitude.text);
+    final longitude = double.tryParse(_longitude.text);
+    if (latitude == null || longitude == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Choose the event location on Google Maps.')),
+      );
+      return;
+    }
     setState(() => _loading = true);
     
     try {
-      await Future.delayed(const Duration(milliseconds: 600));
-
       final types = TicketCategory.values.map((cat) {
         return TicketType(
           id: DateTime.now().millisecondsSinceEpoch.toString() + cat.name,
@@ -109,6 +143,8 @@ class _CreateEventSheetState extends State<CreateEventSheet> {
         title: _title.text.trim(),
         description: _desc.text.trim(),
         location: _location.text.trim(),
+        latitude: latitude,
+        longitude: longitude,
         date: _date,
         start: _start,
         end: _end,
@@ -285,11 +321,27 @@ class _CreateEventSheetState extends State<CreateEventSheet> {
                 validator: (v) => v?.trim().isEmpty == true ? 'Required' : null,
               ),
               const SizedBox(height: 14),
-              AppField(
-                label: l.location,
-                controller: _location,
-                prefix: Icons.location_on_outlined,
-                validator: (v) => v?.trim().isEmpty == true ? 'Required' : null,
+              Text(l.location,
+                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+              const SizedBox(height: 8),
+              OutlinedButton.icon(
+                onPressed: _pickLocation,
+                icon: const Icon(Icons.map_rounded),
+                label: Text(
+                  _latitude.text.isEmpty
+                      ? 'Choose location on map'
+                      : _location.text,
+                ),
+                style: OutlinedButton.styleFrom(
+                  minimumSize: const Size.fromHeight(48),
+                  foregroundColor: C.violet,
+                  side: const BorderSide(color: C.violet),
+                ),
+              ),
+              const SizedBox(height: 6),
+              const Text(
+                'Search for a place or tap the map to set the event location.',
+                style: TextStyle(color: C.t2, fontSize: 12),
               ),
               const SizedBox(height: 14),
 
